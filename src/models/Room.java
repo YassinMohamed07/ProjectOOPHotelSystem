@@ -19,4 +19,8 @@ public class Room {
     public void addAmenity(Amenity amenity) {
         this.amenities.add(amenity);
     }
+
+    public void setType(RoomType type) {
+        this.type = type;
+    }
 }

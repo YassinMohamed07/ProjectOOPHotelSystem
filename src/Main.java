@@ -1,24 +1,59 @@
 import database.HotelDatabase;
-import models.Room;
-import models.RoomType;
+import models.Admin;
+import java.time.LocalDate;
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
 
-        // 2. Abdallah's QA System Test
-        System.out.println("\n--- PHASE 1 SYSTEM TEST ---");
+        Admin mainAdmin = new Admin("Mohamed_Admin", "securepass123", LocalDate.of(2007, 3, 8), 40);
 
-        // Test if the Guests list works and test the getUsername() getter
-        System.out.println("Total Guests in memory: " + HotelDatabase.guests.size());
-        System.out.println("Dummy Guest Account: " + HotelDatabase.guests.get(0).getUsername());
+        Scanner scanner = new Scanner(System.in);
+        boolean isRunning = true;
 
-        // Test if the Rooms list works and test the nested getters
-        System.out.println("Total Rooms in memory: " + HotelDatabase.rooms.size());
+        System.out.println("\n=================================");
+        System.out.println("   WELCOME TO THE HOTEL SYSTEM");
+        System.out.println("   Logged in as: " + mainAdmin.getUsername());
+        System.out.println("=================================");
 
-        Room testRoom = HotelDatabase.rooms.get(0);
-        System.out.println("Room " + testRoom.getRoomNumber() + " is a " + testRoom.getType().getTypeName() + " room.");
-        System.out.println("It costs $" + testRoom.getType().getBasePrice() + " per night.");
+        while (isRunning) {
+            System.out.println("\n--- ADMIN DASHBOARD ---");
+            System.out.println("1. View All System Data (Rooms & Guests)");
+            System.out.println("2. Add a New Room");
+            System.out.println("3. Update a Room Type");
+            System.out.println("4. Delete a Room");
+            System.out.println("5. Exit System");
+            System.out.print("Select an option (1-5): ");
 
+            // Read what the user types in the terminal
+            int choice = scanner.nextInt();
+
+            // Route the choice to the exact methods you wrote in Admin.java
+            switch (choice) {
+                case 1:
+                    mainAdmin.viewAll();
+                    break;
+                case 2:
+                    mainAdmin.add();
+                    break;
+                case 3:
+                    mainAdmin.update();
+                    break;
+                case 4:
+                    mainAdmin.delete();
+                    break;
+                case 5:
+                    System.out.println("Logging out... Goodbye!");
+                    isRunning = false; // This breaks the while loop and ends the program
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+            }
+        }
+
+        // Always close your scanner to prevent memory leaks!
+        scanner.close();
     }
 }
