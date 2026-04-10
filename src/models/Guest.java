@@ -144,18 +144,94 @@ public class Guest {
     }
 
 
-    // search available rooms (STUB, phase 3):
-    public static java.util.List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
-                                                            RoomType type, double maxPrice)
+    // SEARCH ENGINE - finds available rooms based on criteria
+    public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
+                                                  RoomType type, double maxPrice)
             throws InvalidDateException {
-        System.out.println("[STUB] searchAvailableRooms() - Phase 3- Waiting for Teammate 4.");
-        return new java.util.ArrayList<>(); // Empty list prevents crashes
+
+        // Validate dates
+        if (checkIn == null || checkOut == null) {
+            throw new InvalidDateException("Dates required");
+        }
+        if (checkIn.isAfter(checkOut)) {
+            throw new InvalidDateException("Check-in must be before check-out");
+        }
+        if (checkIn.isBefore(LocalDate.now())) {
+            throw new InvalidDateException("Cannot book in the past");
+        }
+
+        List<Room> available = new ArrayList<>();
+
+        // Check each room in database
+        for (Room room : HotelDatabase.rooms) {
+            // Filter by type (if specified)
+            if (type != null && !room.getType().equals(type)) {
+                continue; // Skip this room
+            }
+
+            // Filter by price (if specified)
+            if (maxPrice > 0 && room.getType().getBasePrice() > maxPrice) {
+                continue;
+            }
+
+            // CRITICAL: Check if room is available for these dates
+            if (isRoomAvailable(room, checkIn, checkOut)) {
+                available.add(room);
+            }
+        }
+
+        return available;
+    }
+
+    // HELPER: Check if specific room is free for date range
+    private static boolean isRoomAvailable(Room room, LocalDate checkIn, LocalDate checkOut) {
+        // Check against all reservations (Teammate 4 creates Reservation class)
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getRoom().equals(room) && !res.isCancelled()) {
+                // DATE OVERLAP LOGIC
+                // Two ranges overlap if: (StartA <= EndB) AND (EndA >= StartB)
+                LocalDate existingCheckIn = res.getCheckInDate();
+                LocalDate existingCheckOut = res.getCheckOutDate();
+
+                boolean overlaps = !(existingCheckOut.isBefore(checkIn) ||
+                        existingCheckIn.isAfter(checkOut));
+
+                if (overlaps) return false; // Room occupied
+            }
+        }
+        return true; // No conflicts found
     }
 
 
-    // CHECKOUT (PHASE 3 - STUB)
+    // CHECKOUT - integration with Teammate 5's Invoice system
     public Invoice checkout(Reservation reservation) throws Exception {
-        System.out.println("STUB checkout() - Phase 3, Waiting for Teammate(5).");
-        return null;
+        // Verify this guest owns this reservation
+        if (!reservation.getGuest().equals(this)) {
+            throw new InvalidCredentialException("This is not your reservation");
+        }
+
+        // Create invoice (Teammate 5 implements Invoice constructor)
+        Invoice invoice = new Invoice(reservation);
+
+        // Payable interface methods (Mohamed created this interface)
+        double total = invoice.calculateTotal();
+
+        // Check balance
+        if (this.balance < total) {
+            throw new InvalidCredentialException(
+                    "Insufficient funds. Need: $" + total + ", Have: $" + balance
+            );
+        }
+
+        // Process payment
+        boolean success = invoice.processPayment(total);
+        if (success) {
+            this.balance -= total;
+            System.out.println("Payment successful! Remaining balance: $" + this.balance);
+            return invoice;
+        } else {
+            throw new InvalidCredentialException("Payment failed");
+        }
     }
+
 }

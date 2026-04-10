@@ -32,6 +32,10 @@ if ((HotelDatabase.reservations.get(i).getRoom().getRoomNumber()==room.getRoomNu
     this.checkOutDate=checkOut;
 
    }
+    public boolean isCancelled() {
+        return this.reservationStatus == ReservationStatus.CANCELLED;
+    }
+
 public Room getRoom(){
        return this.room;
 }
