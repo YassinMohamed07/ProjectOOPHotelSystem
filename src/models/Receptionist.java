@@ -16,15 +16,17 @@ public class Receptionist extends Staff {
         }
 
         if (reservation.isCheckedIn()) {
-            System.out.println("Notice: Guest '" + reservation.getGuestName()
-                    + "' is already checked in to Room #" + reservation.getRoomNumber() + ".");
+
+            System.out.println("Notice: Guest '" + reservation.getGuest().getUsername()
+                    + "' is already checked in to Room #" + reservation.getRoom().getRoomNumber() + ".");
         }
+
 
         // Mark as checked in
         reservation.setCheckedIn(true);
         System.out.println("== CHECK-IN SUCCESSFUL ==");
-        System.out.println("Guest: " + reservation.getGuestName());
-        System.out.println("Room: #" + reservation.getRoomNumber());
+        System.out.println("Guest: " + reservation.getGuest().getUsername());
+        System.out.println("Room: #" + reservation.getRoom().getRoomNumber());
         System.out.println("Check-in Date: " + reservation.getCheckInDate());
         System.out.println("Check-out Date: " + reservation.getCheckOutDate());
     }
@@ -37,13 +39,15 @@ public class Receptionist extends Staff {
         }
 
         if (!reservation.isCheckedIn()) {
-            System.out.println("Error: Guest: " + reservation.getGuestName()
+
+            System.out.println("Error: Guest: " + reservation.getGuest().getUsername()
                     + " was never checked in. Cannot check out.");
             return null;
         }
 
         if (reservation.isCheckedOut()) {
-            System.out.println("Notice: Guest: " + reservation.getGuestName()
+
+            System.out.println("Notice: Guest: " + reservation.getGuest().getUsername()
                     + " has already been checked out.");
             return null;
         }
@@ -56,8 +60,8 @@ public class Receptionist extends Staff {
         HotelDatabase.invoices.add(invoice);
 
         System.out.println("== CHECK-OUT SUCCESSFUL ==");
-        System.out.println("Guest: " + reservation.getGuestName());
-        System.out.println("Room:  #" + reservation.getRoomNumber());
+        System.out.println("Guest: " + reservation.getGuest().getUsername());
+                System.out.println("Room:  #" + reservation.getRoom().getRoomNumber());
         System.out.println("--Invoice Summary--");
         System.out.println(invoice);
         return invoice;

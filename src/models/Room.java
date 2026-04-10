@@ -23,4 +23,25 @@ public class Room {
     public void setType(RoomType type) {
         this.type = type;
     }
+    public double totalAmenitiesPrice(){
+        double sum=0;
+        int length= amenities.size();
+        for(int i=0;i<length;i++){
+
+            sum+=amenities.get(i).getPrice();
+
+        } return sum;
+    }
+    public double totalRoomPricePerOneNight(){
+        return totalAmenitiesPrice() + type.getBasePrice();
+    }
+    public void printAmenities(){
+        int length= amenities.size();
+
+        for(int i=0;i<length;i++){
+
+            System.out.println((i+1)+" "+amenities.get(i).getName());
+        }
+
+    }
 }

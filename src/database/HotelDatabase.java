@@ -29,8 +29,8 @@ public class HotelDatabase {
         allAmenities.add(new Amenity("Mini-bar"));
 
         // 3. Setup Rooms
-        rooms.add(new Room(85, single));
-        rooms.add(new Room(45, suite));
+        rooms.add(new Room(85,single));
+        rooms.add(new Room(45,suite));
 
         // 4. Setup dummy Guest
         try {
