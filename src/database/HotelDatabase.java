@@ -2,6 +2,11 @@ package database;
 
 import models.*;
 import java.util.ArrayList;
+import java.time.LocalDate;
+import exceptions.WeakPwordException;
+import exceptions.InvalidDateException;
+
+
 
 public class HotelDatabase {
     public static ArrayList<Guest> guests = new ArrayList<>();
@@ -28,7 +33,13 @@ public class HotelDatabase {
         rooms.add(new Room(45, suite));
 
         // 4. Setup dummy Guest
-        guests.add(new Guest("admin_user", "password123"));
+        try {
+            guests.add(new Guest("admin_user", "Password123!",
+                    LocalDate.of(1990, 1, 1),
+                    Gender.MALE, 500.0, "123 Street", "None"));
+        } catch (WeakPwordException | InvalidDateException e) {
+            System.out.println("Error creating dummy guest: " + e.getMessage());
+        }
 
         System.out.println("Database initialized with dummy data.");
     }
