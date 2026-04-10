@@ -100,10 +100,9 @@ public class Guest {
 
 
 
-    /**
-     *  Guest must be able to make reservations
-     * Stub: waiting for (teammate4)'s Reservation class
-     */
+
+    //Guest must be able to make reservations
+
     public Reservation makeReservation(Room room, LocalDate checkIn, LocalDate checkOut)
             throws InvalidDateException {
         // Validation
@@ -114,37 +113,42 @@ public class Guest {
             throw new InvalidDateException("Check-in must be before check-out");
         }
 
-        /*
-         STUB: fake code to make code runnable for now
-         imp. Replace with "new Reservation(this, room, checkIn, checkOut)" when Teammate 4 is finished
-        */
-        System.out.println("[STUB] Reservation would be created here. Waiting for Teammate 4.");
-        return null;
+        Reservation newRes = new Reservation(this, room, checkIn, checkOut);
+        HotelDatabase.reservations.add(newRes);
+        System.out.println("Reservation created successfully for room " + room.getRoomNumber());
+        return newRes;
     }
 
-    /**
-     * Guest must be able to view their reservations
-     * STUB: waiting for Teammate4
-     */
+
+     //Guest must be able to view their reservations
+
     public java.util.List<Reservation> viewReservations() {
-        System.out.println("[STUB] viewReservations() - returns an empty list until Teammate4 finishes phase 3");
-        return new java.util.ArrayList<>(); // this will return an Empty list
+        List<Reservation> myReservations = new ArrayList<>();
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getGuest().equals(this)) {
+                myReservations.add(res);
+            }
+        }
+        return myReservations;
     }
 
-    /**
-     * Guest must be able to cancel reservations
-     * STUB waiting for Teammate 4
-     */
+
+    // Guest must be able to cancel reservations
+
     public void cancelReservation(Reservation reservation)
             throws InvalidCredentialException {
         if (reservation == null) {
             throw new InvalidCredentialException("Reservation not found");
         }
-        System.out.println("[STUB] Reservation would be cancelled here. Waiting for Teammate 4.");
+        if (!reservation.getGuest().equals(this)) {
+            throw new InvalidCredentialException("Not your reservation");
+        }
+        reservation.cancelReservation();
+        System.out.println("Reservation cancelled successfully");
     }
 
 
-    // SEARCH ENGINE - finds available rooms based on criteria
+    // SEARCH logic - finding available rooms based on criteria
     public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
                                                   RoomType type, double maxPrice)
             throws InvalidDateException {
@@ -164,17 +168,17 @@ public class Guest {
 
         // Check each room in database
         for (Room room : HotelDatabase.rooms) {
-            // Filter by type (if specified)
+            // Filtering by type
             if (type != null && !room.getType().equals(type)) {
-                continue; // Skip this room
+                continue; // Skip!!!
             }
 
-            // Filter by price (if specified)
+            // Filter by price
             if (maxPrice > 0 && room.getType().getBasePrice() > maxPrice) {
                 continue;
             }
 
-            // CRITICAL: Check if room is available for these dates
+            // Imp.: Check if room is available for these dates
             if (isRoomAvailable(room, checkIn, checkOut)) {
                 available.add(room);
             }
@@ -183,7 +187,7 @@ public class Guest {
         return available;
     }
 
-    // HELPER: Check if specific room is free for date range
+    // helper method; Check if specific room is free for date range
     private static boolean isRoomAvailable(Room room, LocalDate checkIn, LocalDate checkOut) {
         // Check against all reservations (Teammate 4 creates Reservation class)
         for (Reservation res : HotelDatabase.reservations) {
@@ -196,27 +200,27 @@ public class Guest {
                 boolean overlaps = !(existingCheckOut.isBefore(checkIn) ||
                         existingCheckIn.isAfter(checkOut));
 
-                if (overlaps) return false; // Room occupied
+                if (overlaps) return false; // Room is occupied
             }
         }
-        return true; // No conflicts found
+        return true; // No conflicts were found
     }
 
 
-    // CHECKOUT - integration with Teammate 5's Invoice system
+    // Checkout - integration with Teammate5's Invoice system
     public Invoice checkout(Reservation reservation) throws Exception {
         // Verify this guest owns this reservation
         if (!reservation.getGuest().equals(this)) {
             throw new InvalidCredentialException("This is not your reservation");
         }
 
-        // Create invoice (Teammate 5 implements Invoice constructor)
+        // Create invoice Teammate5 implements the invoice constructor
         Invoice invoice = new Invoice(reservation);
 
-        // Payable interface methods (Mohamed created this interface)
+        // Payable interface methods Mohamed created that interface
         double total = invoice.calculateTotal();
 
-        // Check balance
+        // Check the balance
         if (this.balance < total) {
             throw new InvalidCredentialException(
                     "Insufficient funds. Need: $" + total + ", Have: $" + balance
