@@ -10,6 +10,7 @@ public abstract class Staff {
     protected Role role;
     protected int workingHours;
 
+
     public Staff(String username, String password, LocalDate dateOfBirth, Role role, int workingHours) {
         this.username = username;
         this.password = password;
@@ -48,7 +49,7 @@ public abstract class Staff {
         // The loop is perfectly written and ready to go.
         for (Reservation res : HotelDatabase.reservations) {
             // We use a placeholder string to prevent red compile errors until Teammate 4 finishes.
-            System.out.println("Reservation found. -> [Guest Name and Dates pending Teammate 4's getters]");
+            System.out.println("Guest username: "+ res.getGuest().getUsername()+"\t Checkin Date: "+res.getCheckInDate()+"\t Checkout date: "+res.getCheckOutDate()+"\t Reservation status: "+res.getReservationStatus());
         }
     }
 

@@ -1,12 +1,19 @@
 package models;
 
 import database.HotelDatabase;
+import exceptions.InvalidDateException;
+import exceptions.WeakPwordException;
 import interfaces.Manageable;
+import utils.ValidationUtil;
+
 import java.time.LocalDate;
 import java.util.Scanner;
 
 public class Admin extends Staff implements Manageable {
-    public Admin(String username, String password, LocalDate dateOfBirth, int workingHours) {
+    public Admin(String username, String password, LocalDate dateOfBirth, int workingHours) throws WeakPwordException, InvalidDateException {
+        ValidationUtil.validatePassword(password);
+        ValidationUtil.validateDateOfBirth(dateOfBirth);
+        ValidationUtil.validateUsername(username);
         super(username, password, dateOfBirth, Role.ADMIN, workingHours);
     }
 

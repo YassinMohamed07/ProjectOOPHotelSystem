@@ -8,16 +8,35 @@ import java.util.ArrayList;
 
 public class Invoice implements Payable {
 
-    private Reservation reservation;
-    private PaymentMethod paymentmethod=PaymentMethod.CASH;
-    private LocalDate transactionDate=LocalDate.now();
-    public Invoice(){}
-    public Invoice(Reservation reservation){
-        this.reservation=reservation;
-    }
-   private final long numberOfNights=ChronoUnit.DAYS.between(reservation.getCheckInDate(),reservation.getCheckOutDate());
-    private final Room room=reservation.getRoom();
-    private final double roomPricePerOneNight=room.totalRoomPricePerOneNight();
+        private Reservation reservation;
+        private LocalDate checkInDate;
+        private LocalDate checkOutDate;
+        private PaymentMethod paymentmethod = PaymentMethod.CASH;
+        private final LocalDate transactionDate = LocalDate.now();
+
+        // Move these declarations here, but DON'T initialize them yet
+        private long numberOfNights;
+        private double roomPricePerOneNight;
+
+        public Invoice(Reservation reservation) {
+            if (reservation == null) {
+                throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");
+            }
+
+
+            this.reservation = reservation;
+
+
+            this.checkInDate = reservation.getCheckInDate();
+            this.checkOutDate = reservation.getCheckOutDate();
+
+
+            this.numberOfNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+            this.roomPricePerOneNight = reservation.getRoom().totalRoomPricePerOneNight();
+        }
+
+        // ... rest of your methods (calculateTotal, processPayment, etc.)
+
     @Override
     public double calculateTotal(){
         return numberOfNights*roomPricePerOneNight;
@@ -53,6 +72,13 @@ public boolean processPayment(double amountPaid){
     }
 
 
+    public PaymentMethod getPaymentmethod() {
+        return paymentmethod;
+    }
+
+    public void setPaymentmethod(PaymentMethod paymentmethod) {
+        this.paymentmethod = paymentmethod;
+    }
 }
 
 

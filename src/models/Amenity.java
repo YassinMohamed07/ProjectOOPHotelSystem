@@ -1,7 +1,7 @@
 package models;
 
 public class Amenity {
-    private String name;
+    private final String name;
     private double price; // dummy field added (for testing)
 
     public Amenity(String name) {
@@ -22,5 +22,10 @@ public class Amenity {
     // Dummy returns amenity price for Invoice calculation (for testing)
     public double getPrice() {
         return price;
+    }
+    @Override
+    public String toString(){
+        return " name: "+name+" its price: "+price;
+
     }
 }

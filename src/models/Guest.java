@@ -150,7 +150,7 @@ public class Guest {
 
     // SEARCH logic - finding available rooms based on criteria
     public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
-                                                  RoomType type, double maxPrice)
+                                                  Roomtypee type, double maxPrice)
             throws InvalidDateException {
 
         // Validate dates
@@ -169,12 +169,12 @@ public class Guest {
         // Check each room in database
         for (Room room : HotelDatabase.rooms) {
             // Filtering by type
-            if (type != null && !room.getType().equals(type)) {
+            if (type != null && !room.getType().getRoomType().equals(type)) {
                 continue; // Skip!!!
             }
 
             // Filter by price
-            if (maxPrice > 0 && room.getType().getBasePrice() > maxPrice) {
+            if (maxPrice > 0 && room.totalRoomPricePerOneNight() > maxPrice) {
                 continue;
             }
 

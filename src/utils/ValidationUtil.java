@@ -5,7 +5,8 @@ import exceptions.*;
 import java.time.LocalDate;
 import java.time.Period;
 import models.Guest;
-public class ValidationUtil {
+public class
+ValidationUtil {
     public static void validatePassword(String password) throws WeakPwordException{
         // Check no1: Not null and minimum length
         if (password == null || password.length() < 8) {
@@ -49,7 +50,7 @@ public class ValidationUtil {
         }
 
         // Check no5: Has at least one special character
-        String specialChars = "@$!%*?&";
+        String specialChars = "_.@$!%*?&";
         boolean hasSpecial = false;
         for (char c : password.toCharArray()) {
             if (specialChars.indexOf(c) >= 0) {

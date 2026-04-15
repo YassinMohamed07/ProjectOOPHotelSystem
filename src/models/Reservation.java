@@ -36,17 +36,34 @@ if ((HotelDatabase.reservations.get(i).getRoom().getRoomNumber()==room.getRoomNu
         return this.reservationStatus == ReservationStatus.CANCELLED;
     }
 
-public Room getRoom(){
-       return this.room;
+    public ReservationStatus getReservationStatus() {
+        return reservationStatus;
+    }
+    public Room getRoom(){
+       if(this.room==null){
+        throw new NullPointerException("There isn't a room assigned to this reservation");
+
+       }
+
+
+        return this.room;
 }
 public Guest getGuest(){
        return guest;
 }
 
 public LocalDate getCheckInDate() {
+        if(checkInDate==null){
+            return LocalDate.now();
+        }
+
+
         return checkInDate;
     }
     public LocalDate getCheckOutDate(){
+        if(checkOutDate==null){
+            return LocalDate.now().plusDays(3);
+        }
        return checkOutDate;
     }
     public void setGuest(Guest guest){
@@ -55,20 +72,21 @@ public LocalDate getCheckInDate() {
     public void setRoom(Room room){
         this.room=room;
     }
-    public void setCheckInDate(LocalDate date){
+    public void setCheckInDate(LocalDate date) throws InvalidDateException{
 LocalDate today=LocalDate.now();
 if(today.isBefore(date)){
         this.checkInDate=date;
 System.out.println("Check in date is changed");
 }
-else System.out.println("Check in Date cant be changed. The check-in date has already arrived or passed.");
+else  throw new InvalidDateException("\"Check out Date cant be changed. The check-in date has already arrived or passed.\"");
+
     }
-    public void setCheckOutDate(LocalDate date) {
+    public void setCheckOutDate(LocalDate date) throws InvalidDateException {
         LocalDate today = LocalDate.now();
         if (today.isBefore(date)) {
             this.checkOutDate = date;
             System.out.println("Check out date has changed");
-        } else System.out.println("Check out date cant be changed. The check-out date has already arrived or passed.");
+        } else throw new InvalidDateException("\"Check out Date cant be changed. The check-in date has already arrived or passed.\"");
     }
     public boolean isCheckedIn() {
         return checkedIn;
@@ -122,6 +140,9 @@ public void viewReservation(){
     }
 }
 
+    public void setInvoice(Invoice invoice) {
+        this.invoice = invoice;
+    }
 }
 
 

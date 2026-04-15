@@ -9,6 +9,7 @@ import exceptions.InvalidDateException;
 
 
 public class HotelDatabase {
+    public static ArrayList<Staff> staff= new ArrayList<>();
     public static ArrayList<Guest> guests = new ArrayList<>();
     public static ArrayList<Room> rooms = new ArrayList<>();
     public static ArrayList<Reservation> reservations = new ArrayList<>();
@@ -17,30 +18,25 @@ public class HotelDatabase {
     public static ArrayList<RoomType> roomTypes = new ArrayList<>();
     public static ArrayList<Amenity> allAmenities = new ArrayList<>();
 
-    public static void initialize() {
-        // 1. Setup Room Types
-        RoomType single = new RoomType("Single", 500);
-        RoomType suite = new RoomType("Suite", 2000);
-        roomTypes.add(single);
-        roomTypes.add(suite);
+    public static void initialize() throws InvalidDateException, WeakPwordException {
+        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,2000,"zahra2 el maadi","A room with strong wifi"));
+        guests.add(new Guest("Abdullah","Abdalaa.2007",LocalDate.of(2007,3,4),Gender.MALE,500,"Madinaty","A suite  room with a mini bar"));
+staff.add(new Admin("Seif","Seif.2007",LocalDate.of(2007,10,14),9));
+staff.add(new Receptionist("Yassin","Yassin.2007",LocalDate.of(2007,10,10),9));
+staff.add(new Admin("Mohamed","Moh.2007",LocalDate.of(2007,11,11),9));
+roomTypes.add(new RoomType("Single",2000));
+roomTypes.add(new RoomType("Double",3500));
+roomTypes.add(new RoomType("Suite",4500));
+allAmenities.add(new Amenity("Wifi",200));
+allAmenities.add(new Amenity("Mini Bar",250));
+rooms.add(new Room(202,new RoomType("Single",2000),allAmenities,Roomtypee.SINGLE));
+rooms.add(new Room(115,new RoomType("Suite",4500),allAmenities,Roomtypee.SUITE));
+reservations.add(new Reservation(guests.get(0),rooms.get(0),LocalDate.of(2026,4,15),LocalDate.of(2026,4,17)));
+reservations.add(new Reservation(guests.get(1),rooms.get(1),LocalDate.of(2026,4,25),LocalDate.of(2026,4,27)));
+invoices.add(new Invoice(reservations.get(0)));
+invoices.add(new Invoice(reservations.get(1)));
+reservations.get(0).setInvoice(invoices.get(0));
+        reservations.get(1).setInvoice(invoices.get(1));
 
-        // 2. Setup Amenities
-        allAmenities.add(new Amenity("WiFi"));
-        allAmenities.add(new Amenity("Mini-bar"));
-
-        // 3. Setup Rooms
-        rooms.add(new Room(85,single));
-        rooms.add(new Room(45,suite));
-
-        // 4. Setup dummy Guest
-        try {
-            guests.add(new Guest("admin_user", "Password123!",
-                    LocalDate.of(1990, 1, 1),
-                    Gender.MALE, 500.0, "123 Street", "None"));
-        } catch (WeakPwordException | InvalidDateException e) {
-            System.out.println("Error creating dummy guest: " + e.getMessage());
-        }
-
-        System.out.println("Database initialized with dummy data.");
     }
 }

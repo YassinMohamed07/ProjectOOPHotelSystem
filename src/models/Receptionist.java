@@ -1,11 +1,18 @@
 package models;
 
 import database.HotelDatabase;
+import exceptions.InvalidDateException;
+import exceptions.WeakPwordException;
+import utils.ValidationUtil;
+
 import java.time.LocalDate;
 
 public class Receptionist extends Staff {
-
-    public Receptionist(String username, String password, LocalDate dateOfBirth, int workingHours) {
+final private Role myrole=Role.RECEPTIONIST;
+    public Receptionist(String username, String password, LocalDate dateOfBirth, int workingHours) throws WeakPwordException, InvalidDateException {
+        ValidationUtil.validatePassword(password);
+        ValidationUtil.validateDateOfBirth(dateOfBirth);
+        ValidationUtil.validateUsername(username);
         super(username, password, dateOfBirth, Role.RECEPTIONIST, workingHours);
     }
 

@@ -5,6 +5,18 @@ public class Room {
     private int roomNumber;
     private RoomType type;
     private ArrayList<Amenity> amenities;
+public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
+    this.roomNumber=roomNumber;
+    this.type=type;
+    this.amenities=amenities;
+}
+    public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities,Roomtypee typee){
+        type.setType(typee);
+    this.roomNumber=roomNumber;
+        this.type=type;
+        this.amenities=amenities;
+
+    }
 
     public Room(int roomNumber, RoomType type) {
         this.roomNumber = roomNumber;
@@ -43,5 +55,9 @@ public class Room {
             System.out.println((i+1)+" "+amenities.get(i).getName());
         }
 
+    }
+    @Override
+    public String toString(){
+    return "Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ amenities;
     }
 }
