@@ -20,6 +20,10 @@ public RoomType(Roomtypee typee){
     public void setType(Roomtypee type) {
         this.type = type;
     }
+    public void setBasePrice(double basePrice) {
+        this.basePrice = basePrice;
+    }
+
     @Override
     public String toString(){
         return type.toString();

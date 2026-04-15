@@ -8,12 +8,12 @@ import utils.ValidationUtil;
 import java.time.LocalDate;
 
 public class Receptionist extends Staff {
-final private Role myrole=Role.RECEPTIONIST;
+
     public Receptionist(String username, String password, LocalDate dateOfBirth, int workingHours) throws WeakPwordException, InvalidDateException {
+        super(username, password, dateOfBirth, Role.RECEPTIONIST, workingHours);
         ValidationUtil.validatePassword(password);
         ValidationUtil.validateDateOfBirth(dateOfBirth);
         ValidationUtil.validateUsername(username);
-        super(username, password, dateOfBirth, Role.RECEPTIONIST, workingHours);
     }
 
     // Check-in operations
@@ -31,6 +31,7 @@ final private Role myrole=Role.RECEPTIONIST;
 
         // Mark as checked in
         reservation.setCheckedIn(true);
+        reservation.setReservationStatus(ReservationStatus.CONFIRMED);
         System.out.println("== CHECK-IN SUCCESSFUL ==");
         System.out.println("Guest: " + reservation.getGuest().getUsername());
         System.out.println("Room: #" + reservation.getRoom().getRoomNumber());
@@ -63,8 +64,12 @@ final private Role myrole=Role.RECEPTIONIST;
         reservation.setCheckedOut(true);
 
         // Generate the invoice
-        Invoice invoice = new Invoice(reservation);
-        HotelDatabase.invoices.add(invoice);
+        Invoice invoice = reservation.getInvoice();
+        if (invoice == null) {
+            invoice = new Invoice(reservation);
+            reservation.setInvoice(invoice);
+            HotelDatabase.invoices.add(invoice);
+        }
 
         System.out.println("== CHECK-OUT SUCCESSFUL ==");
         System.out.println("Guest: " + reservation.getGuest().getUsername());
@@ -91,17 +96,14 @@ final private Role myrole=Role.RECEPTIONIST;
         return success;
     }
 
-    @Override
     public void viewAllGuests() {
         super.viewAllGuests();
     }
 
-    @Override
     public void viewAllRooms() {
         super.viewAllRooms();
     }
 
-    @Override
     public void viewAllReservations() {
         super.viewAllReservations();
     }
