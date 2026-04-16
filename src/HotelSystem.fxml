@@ -1,14 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="Main"
-            prefHeight="400.0" prefWidth="600.0">
+            fx:controller="MainController"
+            prefHeight="400.0" prefWidth="600.0"
+            style="-fx-background-color: linear-gradient(to bottom, #2c3e50, #3498db);">
+
+    <VBox alignment="CENTER" spacing="20"
+          AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <Label text="Hotel Reservation System"
+               style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;"/>
+
+        <Label text="Guest Login"
+               style="-fx-text-fill: #ecf0f1; -fx-font-size: 16px;"/>
+
+        <VBox alignment="CENTER" spacing="15" maxWidth="350"
+              style="-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 12; -fx-padding: 30;">
+
+            <VBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="Username"
+                       style="-fx-text-fill: #2c3e50; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                <TextField fx:id="usernameField" promptText="Enter your username"
+                           style="-fx-pref-height: 38; -fx-background-radius: 6; -fx-border-radius: 6; -fx-border-color: #bdc3c7; -fx-font-size: 13px;"/>
+            </VBox>
+
+            <VBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="Password"
+                       style="-fx-text-fill: #2c3e50; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                <PasswordField fx:id="passwordField" promptText="Enter your password"
+                               style="-fx-pref-height: 38; -fx-background-radius: 6; -fx-border-radius: 6; -fx-border-color: #bdc3c7; -fx-font-size: 13px;"/>
+            </VBox>
+
+            <Button text="Login" onAction="#handleLogin" prefWidth="200" prefHeight="40"
+                    style="-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;"/>
+
+            <Label fx:id="statusLabel" text=""
+                   style="-fx-font-size: 12px; -fx-wrap-text: true;" wrapText="true"/>
+        </VBox>
+
+    </VBox>
 
 </AnchorPane>

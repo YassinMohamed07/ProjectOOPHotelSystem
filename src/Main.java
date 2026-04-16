@@ -22,7 +22,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        Group root = new Group();
+        Parent root = FXMLLoader.load(getClass().getResource("HotelSystem.fxml"));
         Scene scene = new Scene(root);
         Image icon = new Image("hotel.png");
         primaryStage.getIcons().add(icon);
