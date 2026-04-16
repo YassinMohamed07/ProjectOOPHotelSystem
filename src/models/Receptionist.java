@@ -3,8 +3,9 @@ package models;
 import database.HotelDatabase;
 import exceptions.InvalidDateException;
 import exceptions.WeakPwordException;
+import exceptions.InvalidCredentialException;
 import utils.ValidationUtil;
-
+import java.util.Scanner;
 import java.time.LocalDate;
 
 public class Receptionist extends Staff {
@@ -20,6 +21,7 @@ public class Receptionist extends Staff {
     public void checkIn(Reservation reservation) {
         if (reservation == null) {
             System.out.println("Error: No reservation provided for check-in.");
+            return;
         }
 
         if (reservation.isCheckedIn()) {
@@ -62,7 +64,8 @@ public class Receptionist extends Staff {
 
         // Mark as checked out
         reservation.setCheckedOut(true);
-
+        // Auto-update status to COMPLETED on checkout
+        reservation.setReservationStatus(ReservationStatus.COMPLETED);
         // Generate the invoice
         Invoice invoice = reservation.getInvoice();
         if (invoice == null) {
@@ -78,6 +81,82 @@ public class Receptionist extends Staff {
         System.out.println(invoice);
         return invoice;
     }
+    // Manual status update for edge cases
+    public void updateReservationStatus(Reservation reservation, ReservationStatus newStatus)
+            throws InvalidCredentialException {
+        if (reservation == null) {
+            throw new InvalidCredentialException("No reservation provided");
+        }
+
+        ReservationStatus current = reservation.getReservationStatus();
+        if (current == ReservationStatus.CANCELLED && newStatus != ReservationStatus.CANCELLED) {
+            throw new InvalidCredentialException("Cannot change status of CANCELLED reservation");
+        }
+
+        reservation.setReservationStatus(newStatus);
+        System.out.println("Updated: " + current + " → " + newStatus);
+    }
+
+    // Auto-complete expired reservations
+    public int finalizeCompletedReservations() {
+        int count = 0;
+        LocalDate today = LocalDate.now();
+
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getCheckOutDate().isBefore(today) &&
+                    res.isCheckedIn() &&
+                    !res.isCheckedOut() &&
+                    res.getReservationStatus() == ReservationStatus.CONFIRMED) {
+
+                res.setCheckedOut(true);
+                res.setReservationStatus(ReservationStatus.COMPLETED);
+
+                if (res.getInvoice() == null) {
+                    Invoice inv = new Invoice(res);
+                    res.setInvoice(inv);
+                    HotelDatabase.invoices.add(inv);
+                }
+                count++;
+            }
+        }
+        System.out.println("Auto-completed " + count + " expired reservations");
+        return count;
+    }
+
+    // Interactive menu for manual updates
+    public void manualStatusUpdateMenu() {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\nEnter Guest Username: ");
+        String username = sc.next();
+
+        Reservation found = null;
+        for (Reservation r : HotelDatabase.reservations) {
+            if (r.getGuest().getUsername().equalsIgnoreCase(username)) {
+                found = r; break;
+            }
+        }
+
+        if (found == null) {
+            System.out.println("Error: No reservation found");
+            return;
+        }
+
+        System.out.println("Current: " + found.getReservationStatus());
+        System.out.println("1.PENDING 2.CONFIRMED 3.CANCELLED 4.COMPLETED");
+        System.out.print("Choice: ");
+
+        try {
+            int choice = sc.nextInt();
+            if (choice < 1 || choice > 4) {
+                System.out.println("Invalid choice (1-4 only)");
+                return;
+            }
+            ReservationStatus status = ReservationStatus.values()[choice-1];
+            updateReservationStatus(found, status);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
 
     // Process payment for a checkout invoice.
     public boolean processCheckoutPayment(Invoice invoice, double amountPaid) {
@@ -89,6 +168,15 @@ public class Receptionist extends Staff {
         boolean success = invoice.processPayment(amountPaid);
         if (success) {
             System.out.println("Payment of $" + String.format("%.2f", amountPaid) + " processed successfully.");
+            Guest guest = invoice.getReservation().getGuest();
+            double total = invoice.calculateTotal();
+            guest.setBalance(guest.getBalance() - total);
+            System.out.println("Guest balance updated. New balance: $" + String.format("%.2f", guest.getBalance()));
+            // Ensure COMPLETED status after successful payment
+            Reservation res = invoice.getReservation();
+            if (res != null && res.isCheckedOut() && res.getReservationStatus() != ReservationStatus.COMPLETED) {
+                res.setReservationStatus(ReservationStatus.COMPLETED);
+            }
         } else {
             System.out.println("Payment failed. Amount $" + String.format("%.2f", amountPaid)
                     + " is insufficient. Total due: $" + String.format("%.2f", invoice.calculateTotal()));
@@ -105,7 +193,20 @@ public class Receptionist extends Staff {
     }
 
     public void viewAllReservations() {
-        super.viewAllReservations();
+        System.out.println("\n--- All Reservations ---");
+        if (HotelDatabase.reservations.isEmpty()) {
+            System.out.println("No active reservations.");
+            return;
+        }
+        for (Reservation res : HotelDatabase.reservations) {
+            String marker = "";
+            if (res.getReservationStatus() == ReservationStatus.COMPLETED) marker = " [DONE]";
+            else if (res.getReservationStatus() == ReservationStatus.CANCELLED) marker = " [CANCELLED]";
+
+            System.out.println(res.getGuest().getUsername() + " | Room #" + res.getRoom().getRoomNumber()
+                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                    + " | Status: " + res.getReservationStatus() + marker);
+        }
     }
 
     // View all invoices in the system.

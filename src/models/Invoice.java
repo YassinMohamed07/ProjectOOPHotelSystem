@@ -26,7 +26,7 @@ public class Invoice implements Payable {
 
             this.reservation = reservation;
 
-this.reservation.setPaid(true);
+
             this.checkInDate = reservation.getCheckInDate();
             this.checkOutDate = reservation.getCheckOutDate();
 
@@ -43,7 +43,7 @@ this.reservation.setPaid(true);
     }
 public boolean processPayment(double amountPaid){
         if(amountPaid>=calculateTotal()){
-
+            reservation.setPaid(true);
             reservation.setReservationStatus(ReservationStatus.CONFIRMED);
             return true;
 
@@ -61,7 +61,7 @@ public boolean processPayment(double amountPaid){
         double total = calculateTotal();
 
         // Determine status without calling a "process" method (use a getter instead)
-        String status = this.processPayment(calculateTotal())? "PAID" : "UNPAID";
+        String status = reservation.isPaid() ? "PAID" : "UNPAID";
 
         StringBuilder sb = new StringBuilder();
         sb.append("------------------------------------\n");
@@ -92,6 +92,9 @@ public boolean processPayment(double amountPaid){
 
     public void setPaymentmethod(PaymentMethod paymentmethod) {
         this.paymentmethod = paymentmethod;
+    }
+    public Reservation getReservation() {
+        return reservation;
     }
 }
 

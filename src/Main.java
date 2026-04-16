@@ -34,8 +34,8 @@ public class Main extends Application {
 
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
-        launch(args);
         HotelDatabase.initialize();
+//        launch(args);
         boolean exitt=false;
         Scanner input = new Scanner(System.in);
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
@@ -45,7 +45,7 @@ public class Main extends Application {
             System.out.println("3. Register New Guest");
             System.out.println("4. Exit");
             System.out.print("Select an option (1-4): ");
-            switch (input.nextInt()) {
+            switch (getValidIntInput(input, 1, 4)) {
                 case 1:{
 
                     boolean loggedIn = false; // Flag to track success
@@ -79,7 +79,7 @@ public class Main extends Application {
                     System.out.println("4. Checkout & Pay");
                     System.out.println("5. Exit ");
                     System.out.println("Select an option (1-5): ");
-                    switch (input.nextInt()){
+                    switch (getValidIntInput(input, 1, 5)){
                         case 1: {
                             boolean searchSuccessful = false;
                             List<Room> availableRooms = null;
@@ -131,9 +131,11 @@ public class Main extends Application {
                             int choice = input.nextInt();
 
                             // 3. Logic to "take" the room using the stored dates
-                            if (choice >= 0 && choice <= availableRooms.size()) {
-                                choice--;
-                                Room selectedRoom = availableRooms.get(choice);
+                            if (choice < 1 || choice > availableRooms.size()) {
+                                System.out.println("Invalid selection. Must be 1-" + availableRooms.size());
+                                break;
+                            }
+                            Room selectedRoom = availableRooms.get(choice - 1);
 
                                 try {
                                     // We use the 'checkIn' and 'checkOut' variables you defined at the start of Case 1
@@ -142,9 +144,7 @@ public class Main extends Application {
                                 } catch (InvalidDateException e) {
                                     System.out.println("Error: " + e.getMessage());
                                 }
-                            } else {
-                                System.out.println("Invalid selection. Returning to menu.");
-                            }
+
                                    break;
                                 }
                                  case 2: {
@@ -157,8 +157,10 @@ public class Main extends Application {
                                   System.out.println(i+1+" "+myReservations.get(i));
                                   }
 
-
+                            break;
                         }
+
+
                         case 3: {
 
                             List<Reservation> myReservations=guest.viewReservations();
@@ -173,6 +175,10 @@ public class Main extends Application {
 
                                 System.out.println("Enter the number of reservation you want to cancel: ");
                                  int choice = input.nextInt();
+                            if (choice < 1 || choice > myReservations.size()) {
+                                System.out.println("Invalid selection. Must be 1-" + myReservations.size());
+                                break;
+                            }
                                  guest.cancelReservation(myReservations.get(--choice));
 
                               break;                }
@@ -188,6 +194,10 @@ public class Main extends Application {
 
                             System.out.println("Enter the number of reservation you want to pay for : ");
 int choice= input.nextInt();
+if (choice < 1 || choice > myReservations.size()) {
+    System.out.println("Invalid selection. Must be 1-" + myReservations.size());
+    break;
+                            }
 if(myReservations.get(choice-1).isPaid()){
 
     System.out.println("This reservation is already paid");
@@ -231,7 +241,7 @@ catch(Exception e ){
                         System.out.println("3. Return to main menu");
                         System.out.print("Select your testing role (1-3): ");
 
-                        int roleChoice = input.nextInt();
+                        int roleChoice =  getValidIntInput(input, 1, 3);
 
                         // ADMIN
                         switch(roleChoice){
@@ -278,7 +288,7 @@ adminRunning=false;
                                 System.out.println("5. Logout");
                                 System.out.print("Select an option (1-5): ");
 
-                                switch (input.nextInt()) {
+                                switch (getValidIntInput(input, 1, 5)) {
                                     case 1:
                                         mainAdmin.viewAll();
                                         break;
@@ -335,10 +345,12 @@ adminRunning=false;
                                 System.out.println("4. View All Invoices");
                                 System.out.println("5. Check-In a Guest");
                                 System.out.println("6. Check-Out a Guest & Process Payment");
-                                System.out.println("7. Logout");
-                                System.out.print("Select an option (1-7): ");
+                                System.out.println("7. Update Reservation Status");
+                                System.out.println("8. Finalize Expired Reservations");
+                                System.out.println("9. Logout");
+                                System.out.print("Select an option (1-9): ");
 
-                                switch (input.nextInt()) {
+                                switch (getValidIntInput(input, 1, 9)) {
                                     case 1:
                                         frontDesk.viewAllGuests();
                                         break;
@@ -403,8 +415,13 @@ adminRunning=false;
                                         }
                                         break;
                                     }
-
                                     case 7:
+                                        frontDesk.manualStatusUpdateMenu();
+                                        break;
+                                    case 8:
+                                        frontDesk.finalizeCompletedReservations();
+                                        break;
+                                    case 9:
                                         System.out.println("Logging Receptionist out...");
                                         recRunning = false;
                                         break;
@@ -465,6 +482,18 @@ adminRunning=false;
                 default:
                     System.out.println("Invalid option. Please choose 1-4.");
                     break;
+            }
+        }
+    }
+    private static int getValidIntInput(Scanner input, int min, int max) {
+        while (true) {
+            try {
+                int choice = input.nextInt();
+                if (choice >= min && choice <= max) return choice;
+                System.out.print("Invalid range. Try again: ");
+            } catch (Exception e) {
+                System.out.print("Invalid input. Enter number: ");
+                input.next(); // clear invalid input
             }
         }
     }
