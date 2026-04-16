@@ -2,6 +2,13 @@ import database.HotelDatabase;
 import exceptions.InvalidCredentialException;
 import exceptions.InvalidDateException;
 import exceptions.WeakPwordException;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.stage.Stage;
 import models.*;
 
 import java.time.LocalDate;
@@ -11,9 +18,23 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.ConsoleHandler;
 
-public class Main {
+public class Main extends Application {
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+
+        Group root = new Group();
+        Scene scene = new Scene(root);
+        Image icon = new Image("hotel.png");
+        primaryStage.getIcons().add(icon);
+        primaryStage.setTitle("Hotel Reservation System");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
+        launch(args);
         HotelDatabase.initialize();
         boolean exitt=false;
         Scanner input = new Scanner(System.in);
