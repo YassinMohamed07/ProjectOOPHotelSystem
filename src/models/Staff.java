@@ -1,6 +1,8 @@
 package models;
 
 import database.HotelDatabase;
+import exceptions.InvalidCredentialException;
+
 import java.time.LocalDate;
 
 public abstract class Staff {
@@ -91,6 +93,33 @@ public abstract class Staff {
 
     public void setWorkingHours(int workingHours) {
         this.workingHours = workingHours;
+    }
+    public static Staff login(String username, String password)
+            throws InvalidCredentialException {
+
+        //Check if database is empty
+        if (HotelDatabase.staff == null || HotelDatabase.staff.isEmpty()) {
+            throw new InvalidCredentialException("No users in system");
+        }
+
+        // Search through all guests using linear search
+        for (Staff g : HotelDatabase.staff) {
+            if (g.getUsername().equals(username)) {
+                if (g.verifyPassword(password)) {
+
+                    return g; // Return the found staff object
+                } else {
+                    throw new InvalidCredentialException("Wrong password");
+                }
+            }
+        }
+
+        // If loop finishes without finding username
+        throw new InvalidCredentialException("User '" + username + "' not found");
+    }
+    public boolean verifyPassword(String input) {
+        return this.password.equals(input);
+
     }
 }
 

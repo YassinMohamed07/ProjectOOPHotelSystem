@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+
 import exceptions.*;
 import utils.ValidationUtil;
 import database.HotelDatabase;
@@ -64,7 +66,7 @@ public class Guest {
 
         //1. Create new guest and the constructor handles validation
         Guest newGuest = new Guest(username, password, dateOfBirth, gender,
-                balance, address, roomPreferences);
+                (double)  balance, address, roomPreferences);
 
         //2. Add to database; HotelDatabase is Teammate 2's class
         if (HotelDatabase.guests != null) {
@@ -143,8 +145,12 @@ public class Guest {
         if (!reservation.getGuest().equals(this)) {
             throw new InvalidCredentialException("Not your reservation");
         }
+        try{
         reservation.cancelReservation();
-        System.out.println("Reservation cancelled successfully");
+        System.out.println("Reservation cancelled successfully");}
+        catch (InvalidDateException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 
@@ -208,34 +214,40 @@ public class Guest {
 
 
     // Checkout - integration with Teammate5's Invoice system
-    public Invoice checkout(Reservation reservation) throws Exception {
-        // Verify this guest owns this reservation
+    public Invoice checkout(Reservation reservation) throws Exception ,InvalidCredentialException{
+        System.out.println("Choose a payment method(CASH,ONLINE,CREDIT_CARD): " );
+        Scanner input=new Scanner(System.in);
+String method=input.next().toUpperCase();
+
         if (!reservation.getGuest().equals(this)) {
             throw new InvalidCredentialException("This is not your reservation");
         }
 
-        // Create invoice Teammate5 implements the invoice constructor
-        Invoice invoice = new Invoice(reservation);
+            // Create invoice Teammate5 implements the invoice constructor
+            Invoice invoice = new Invoice(reservation);
+            reservation.setInvoice(invoice);
+            // Payable interface methods Mohamed created that interface
+            double total = invoice.calculateTotal();
+        PaymentMethod methodd=PaymentMethod.valueOf(method);
+        reservation.getInvoice().setPaymentmethod(methodd);
+            // Check the balance
+            if (this.balance < total) {
+                throw new InvalidCredentialException(
+                        "Insufficient funds. Need: $" + total + ", Have: $" + balance
+                );
+            }
 
-        // Payable interface methods Mohamed created that interface
-        double total = invoice.calculateTotal();
+            // Process payment
+            boolean success = invoice.processPayment(total);
+            if (success) {
+                this.balance -= total;
+                System.out.println("Payment successful! Remaining balance: $" + this.balance);
+                return invoice;
+            } else {
+                throw new InvalidCredentialException("Payment failed");
+            }
 
-        // Check the balance
-        if (this.balance < total) {
-            throw new InvalidCredentialException(
-                    "Insufficient funds. Need: $" + total + ", Have: $" + balance
-            );
-        }
 
-        // Process payment
-        boolean success = invoice.processPayment(total);
-        if (success) {
-            this.balance -= total;
-            System.out.println("Payment successful! Remaining balance: $" + this.balance);
-            return invoice;
-        } else {
-            throw new InvalidCredentialException("Payment failed");
-        }
-    }
 
-}
+    }}
+

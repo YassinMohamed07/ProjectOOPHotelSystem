@@ -26,7 +26,7 @@ public class Invoice implements Payable {
 
             this.reservation = reservation;
 
-
+this.reservation.setPaid(true);
             this.checkInDate = reservation.getCheckInDate();
             this.checkOutDate = reservation.getCheckOutDate();
 
@@ -39,11 +39,11 @@ public class Invoice implements Payable {
 
     @Override
     public double calculateTotal(){
-        return numberOfNights*roomPricePerOneNight;
+        return numberOfNights*roomPricePerOneNight+(0.14*numberOfNights*roomPricePerOneNight);
     }
 public boolean processPayment(double amountPaid){
         if(amountPaid>=calculateTotal()){
-       System.out.println("Payment succeeded");
+
             reservation.setReservationStatus(ReservationStatus.CONFIRMED);
             return true;
 
@@ -55,20 +55,34 @@ public boolean processPayment(double amountPaid){
 }
     @Override
     public String toString() {
+        // Define a format for the rows: %-16s is a left-aligned 16-character column
+        String rowFormat = "%-16s %s%n";
+        double amenities = reservation.getRoom().totalAmenitiesPrice();
+        double total = calculateTotal();
 
-        return "------------------------------------\n" +
-                "          HOTEL INVOICE             \n" +
-                "------------------------------------\n" +
-                "Guest:         " + reservation.getGuest().getUsername() + "\n" +
-                "Room:          #" + reservation.getRoom().getRoomNumber() + "\n" +
-                "Nights:        " + numberOfNights + "\n" +
-                "Room Rate:     $" + roomPricePerOneNight + " $\n" +
-                "Amenities:     $" + reservation.getRoom().totalAmenitiesPrice() + " $\n" +
-                "------------------------------------\n" +
-                "TOTAL DUE:     $" + calculateTotal() + "$ \n" +
-                "Status:        " + (reservation.isCheckedOut() ? "PAID" : "UNPAID") + "\n" +
-                "Date:          " + transactionDate + "\n" +
-                "------------------------------------";
+        // Determine status without calling a "process" method (use a getter instead)
+        String status = this.processPayment(calculateTotal())? "PAID" : "UNPAID";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("------------------------------------\n");
+        sb.append("          HOTEL INVOICE             \n");
+        sb.append("------------------------------------\n");
+
+        sb.append(String.format(rowFormat, "Guest:", reservation.getGuest().getUsername()));
+        sb.append(String.format(rowFormat, "Room:", "#" + reservation.getRoom().getRoomNumber()));
+        sb.append(String.format(rowFormat, "Nights:", numberOfNights));
+        sb.append(String.format(rowFormat, "Room Rate:", "$" + String.format("%.2f", roomPricePerOneNight)));
+        sb.append(String.format(rowFormat, "Amenities:", "$" + String.format("%.2f", amenities)));
+
+        sb.append("------------------------------------\n");
+        sb.append(String.format(rowFormat, "TOTAL DUE:", "$" + String.format("%.2f", total)));
+        sb.append(String.format("%-16s %s%n", "", "(Including taxes)"));
+        sb.append(String.format(rowFormat, "Status:", status));
+        sb.append(String.format(rowFormat, "Date:", transactionDate));
+        sb.append(String.format(rowFormat, "Payment Method:", this.getPaymentmethod()));
+        sb.append("------------------------------------");
+
+        return sb.toString();
     }
 
 

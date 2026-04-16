@@ -14,6 +14,7 @@ public class Reservation  {
    private Invoice invoice;
    private boolean checkedIn=false;
    private boolean checkedOut=false;
+   private boolean isPaid=false;
     public Reservation(){}
     public Reservation(Guest guest,Room room,LocalDate checkIn,LocalDate checkOut) throws InvalidDateException {
         if (checkIn.isAfter(checkOut) || checkIn.equals(checkOut)) {
@@ -111,37 +112,32 @@ else  throw new InvalidDateException("\"Check out Date cant be changed. The chec
     public Invoice getInvoice() {
         return invoice;
     }
-    public void cancelReservation(){
+    public void cancelReservation() throws InvalidDateException{
         LocalDate today=LocalDate.now();
         if(today.isBefore(checkInDate)){
         this.setReservationStatus(ReservationStatus.CANCELLED);
-        System.out.println("Reservation is Cancelled");}
-        else System.out.println("Reservation cant be cancelled. The check-in date has already arrived or passed.");
+ }
+        else throw new InvalidDateException("This reservation cant be cancelled. The checkin date has already arrived or passed  ");
     }
-public void viewReservation(){
-    System.out.println("\n=== RESERVATION DETAILS ===");
+    @Override
+public String toString(){
 
-    // 1. If the guest hasn't checked out yet, the invoice is null
-    if (invoice == null) {
-        System.out.println("Status: PENDING / STAYING");
-        System.out.println("Guest UserName: " + guest.getUsername());
-        System.out.println("Room No: " + room.getRoomNumber());
 
-        RoomType roomtype = room.getType();
-        System.out.println("Room Type: " + roomtype.getTypeName());
+       return "Room number: "+room.getRoomNumber()+"\t checkin date: "+checkInDate+"\t checkout date: "+checkOutDate+"\t Reservation status: "+reservationStatus;
 
-        System.out.println("Amenities in the room:");
-        this.getRoom().printAmenities();
-    }
-    // 2. If the guest checked out, the invoice exists.
-    // Just print the invoice—it already has all the info!
-    else {
-        System.out.println(invoice);
-    }
+
 }
 
     public void setInvoice(Invoice invoice) {
         this.invoice = invoice;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean paid) {
+        isPaid = paid;
     }
 }
 

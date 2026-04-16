@@ -41,12 +41,13 @@ public class Main extends Application {
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
         while (!exitt) {
             System.out.println("\n1. Login as Guest");
-            System.out.println("2. Login as Admin/Receptionist");
+            System.out.println("2. Login as Staff");
             System.out.println("3. Register New Guest");
             System.out.println("4. Exit");
-            System.out.print("Select an option: ");
+            System.out.print("Select an option (1-4): ");
             switch (input.nextInt()) {
                 case 1:{
+
                     boolean loggedIn = false; // Flag to track success
                     Guest guest=null;
                     while (!loggedIn) {
@@ -57,11 +58,11 @@ public class Main extends Application {
 
                         try {
                             // Attempt login
-                            Guest.login(username, password);
+                            guest=Guest.login(username, password);
 
                             // If the line above doesn't throw an exception, login is successful
                             loggedIn = true;
-                            guest=Guest.login(username,password);
+
 
                         } catch (InvalidCredentialException ex) {
                             // If an exception is caught, the loop runs again
@@ -69,13 +70,15 @@ public class Main extends Application {
                             System.out.println("Please try again.");
                         }
                     }
-
+                         boolean exitGuest=false;
+                    while(!exitGuest){
                     System.out.println("\n--- Guest Menu ---");
                     System.out.println("1. Search & Book a Room");
                     System.out.println("2. View My Reservations");
                     System.out.println("3. Cancel a Reservation");
                     System.out.println("4. Checkout & Pay");
-                    System.out.println("Select an option");
+                    System.out.println("5. Exit ");
+                    System.out.println("Select an option (1-5): ");
                     switch (input.nextInt()){
                         case 1: {
                             boolean searchSuccessful = false;
@@ -124,160 +127,334 @@ public class Main extends Application {
                                 // This uses the toString() you have in your Room class
                                 System.out.println(i+1+ ". " + availableRooms.get(i));
                             }
-                            System.out.print("\nEnter the number of the room you want to book: ");
+                            System.out.print("\nWhich room do you want to book: ");
                             int choice = input.nextInt();
 
                             // 3. Logic to "take" the room using the stored dates
                             if (choice >= 0 && choice <= availableRooms.size()) {
+                                choice--;
                                 Room selectedRoom = availableRooms.get(choice);
 
                                 try {
                                     // We use the 'checkIn' and 'checkOut' variables you defined at the start of Case 1
                                     guest.makeReservation(selectedRoom, checkIn, checkOut);
 
-                                    System.out.println("Reservation successfully linked to your account!");
                                 } catch (InvalidDateException e) {
                                     System.out.println("Error: " + e.getMessage());
                                 }
                             } else {
                                 System.out.println("Invalid selection. Returning to menu.");
                             }
+                                   break;
+                                }
+                                 case 2: {
+                                   List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                               if(myReservations.isEmpty()){
+                                 System.out.println("No reservations found.");
+                                 }
+                               for(int i=0;i<myReservations.size();i++){
+                                  System.out.println(i+1+" "+myReservations.get(i));
+                                  }
+
 
                         }
+                        case 3: {
+
+                            List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                            if(myReservations.isEmpty()){
+                                System.out.println("No reservations found.");
+                                break;
+                            }
+                            for(int i=0;i<myReservations.size();i++){
+                                System.out.println(i+1+" "+myReservations.get(i));
+                            }
+
+                                System.out.println("Enter the number of reservation you want to cancel: ");
+                                 int choice = input.nextInt();
+                                 guest.cancelReservation(myReservations.get(--choice));
+
+                              break;                }
+                        case 4:{ List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                            if(myReservations.isEmpty()){
+                                System.out.println("No reservations found.");
+                                break;
+                            }
+                            for(int i=0;i<myReservations.size();i++){
+                                System.out.println(i+1+" "+myReservations.get(i));
+                            }
+
+                            System.out.println("Enter the number of reservation you want to pay for : ");
+int choice= input.nextInt();
+if(myReservations.get(choice-1).isPaid()){
+
+    System.out.println("This reservation is already paid");
+    System.out.println(myReservations.get(choice-1).getInvoice());
+    break;
+}
+try{System.out.println(guest.checkout(myReservations.get(--choice)));}
+catch(Exception e ){
+    System.out.println(e.getMessage());
+}
+
+
+
+
+
+      break; }
+
+
+                        case 5:{ System.out.println("Returning to main menu......");
+                            exitGuest=true; break;}
+
+                        default:{  System.out.println("Invalid input"); break;
+                        }
+
                     }
-                    break;
+
                 }
+
+
+
+
+
+             break;   }
 
                 case 2: {
-                    System.out.println("\n--- Staff Portal ---");
-                    System.out.println("1. Login as Admin (Full CRUD)");
-                    System.out.println("2. Login as Receptionist (Front Desk)");
-                    System.out.print("Select your testing role (1-2): ");
+                    boolean exitstaff = false;
+                    while (!exitstaff) {
+                        System.out.println("\n--- Staff Portal ---");
+                        System.out.println("1. Login as Admin ");
+                        System.out.println("2. Login as Receptionist ");
+                        System.out.println("3. Return to main menu");
+                        System.out.print("Select your testing role (1-3): ");
 
-                    int roleChoice = input.nextInt();
+                        int roleChoice = input.nextInt();
 
-                    // ADMIN
-                    if (roleChoice == 1) {
-                        Admin mainAdmin = new Admin("Mohamed_Admin", "SecurePass123!", LocalDate.of(2007, 3, 8), 40);
-                        System.out.println("\nBypassing login... Welcome, " + mainAdmin.getUsername() + " (ADMIN)");
+                        // ADMIN
+                        switch(roleChoice){
+                    case 1:    { boolean adminRunning = true;
+                            Admin mainAdmin = null;
+                        String pass=null;
+                        String username=null;
+                            boolean loggedIn=false;
+                            while(!loggedIn) {
+                                System.out.println("Enter username: ");
+                                username = input.next();
+                                System.out.println("Enter password: ");
+                                 pass = input.next();
+                                try {
+                                    if (Staff.login(username, pass) instanceof Receptionist) {
+                                        System.out.println("You are not an admin");
+break;
+                          }
+                                    mainAdmin=(Admin)Staff.login(username,pass);
+loggedIn=true;
+adminRunning=true;
+                                } catch (InvalidCredentialException e) {
+                                    System.out.println(e.getMessage());
+                                    System.out.println("Try again");
+adminRunning=false;
 
-                        boolean adminRunning = true;
-                        while (adminRunning) {
-                            System.out.println("\n--- ADMIN DASHBOARD ---");
-                            System.out.println("1. View Data");
-                            System.out.println("2. Add Data");
-                            System.out.println("3. Update Data");
-                            System.out.println("4. Delete Data");
-                            System.out.println("5. Logout");
-                            System.out.print("Select an option (1-5): ");
 
-                            switch (input.nextInt()) {
-                                case 1: mainAdmin.viewAll(); break;
-                                case 2: mainAdmin.add(); break;
-                                case 3: mainAdmin.update(); break;
-                                case 4: mainAdmin.delete(); break;
-                                case 5:
-                                    System.out.println("Logging Admin out...");
-                                    adminRunning = false;
-                                    break;
-                                default: System.out.println("Invalid choice.");
-                            }
-                        }
-                    }
-                    else if (roleChoice == 2) {
-                        // dummy Receptionist
-                        Receptionist frontDesk = new Receptionist("Yassin_Front", "SecurePass123!", LocalDate.of(2000, 5, 12), 40);
-                        System.out.println("\nBypassing login... Welcome, " + frontDesk.getUsername() + " (RECEPTIONIST)");
+                                } catch (Exception e) {
 
-                        boolean recRunning = true;
-                        while (recRunning) {
-                            System.out.println("\n--- FRONT DESK DASHBOARD ---");
-                            System.out.println("1. View All Guests");
-                            System.out.println("2. View All Rooms");
-                            System.out.println("3. View All Reservations");
-                            System.out.println("4. View All Invoices");
-                            System.out.println("5. Check-In a Guest");
-                            System.out.println("6. Check-Out a Guest & Process Payment");
-                            System.out.println("7. Logout");
-                            System.out.print("Select an option (1-7): ");
-
-                            switch (input.nextInt()) {
-                                case 1: frontDesk.viewAllGuests(); break;
-                                case 2: frontDesk.viewAllRooms(); break;
-                                case 3: frontDesk.viewAllReservations(); break;
-                                case 4: frontDesk.viewAllInvoices(); break;
-
-                                // CHECK-IN LOGIC
-                                case 5: {
-                                    System.out.print("\nEnter Guest Username to Check-In: ");
-                                    String searchName = input.next();
-                                    Reservation foundRes = null;
-
-                                    // Find their reservation in the database
-                                    for (Reservation r : HotelDatabase.reservations) {
-                                        if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && !r.isCancelled()) {
-                                            foundRes = r;
-                                            break;
-                                        }
-                                    }
-
-                                    if (foundRes != null) {
-                                        frontDesk.checkIn(foundRes);
-                                    } else {
-                                        System.out.println("Error: No active reservation found for username '" + searchName + "'.");
-                                    }
+                                    System.out.println("You are not an admin");
                                     break;
                                 }
 
-                                // CHECK-OUT LOGIC
-                                case 6: {
-                                    System.out.print("\nEnter Guest Username to Check-Out: ");
-                                    String searchName = input.next();
-                                    Reservation foundRes = null;
+                            }
 
-                                    // Find the reservation where they are currently checked in
-                                    for (Reservation r : HotelDatabase.reservations) {
-                                        if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && r.isCheckedIn() && !r.isCheckedOut()) {
-                                            foundRes = r;
+
+
+                            while (adminRunning) {
+                                System.out.println("\n--- ADMIN DASHBOARD ---");
+                                System.out.println("1. View Data");
+                                System.out.println("2. Add Data");
+                                System.out.println("3. Update Data");
+                                System.out.println("4. Delete Data");
+                                System.out.println("5. Logout");
+                                System.out.print("Select an option (1-5): ");
+
+                                switch (input.nextInt()) {
+                                    case 1:
+                                        mainAdmin.viewAll();
+                                        break;
+                                    case 2:
+                                        mainAdmin.add();
+                                        break;
+                                    case 3:
+                                        mainAdmin.update();
+                                        break;
+                                    case 4:
+                                        mainAdmin.delete();
+                                        break;
+                                    case 5:
+                                        System.out.println("Logging Admin out...");
+                                        adminRunning = false;
+                                        break;
+                                    default:
+                                        System.out.println("Invalid choice.");
+                                        break;
+                                }
+                            }
+                   break;     } case 2: {
+                                boolean recRunning = true;
+                                boolean loggedIn = false;
+                                Receptionist frontDesk = null;
+                                while (!loggedIn) {
+                                    System.out.println("Enter username: ");
+                                    String username = input.next();
+                                    System.out.println("Enter password: ");
+                                    String pass = input.next();
+                                    try {
+                                        if (Staff.login(username, pass) instanceof Admin) {
+                                            System.out.println("You are not a receptionist.");
+                                            recRunning=false;
                                             break;
                                         }
+                                        frontDesk = (Receptionist) Staff.login(username, pass);
+                                        loggedIn = true;
+                                        recRunning=true;
                                     }
-
-                                    if (foundRes != null) {
-                                        // Process the checkout and generate the invoice
-                                        Invoice generatedInvoice = frontDesk.checkOut(foundRes);
-
-                                        // Process the payment using Receptionist method
-                                        if (generatedInvoice != null) {
-                                            System.out.print("\nEnter amount paid by guest: $");
-                                            double payment = input.nextDouble();
-                                            frontDesk.processCheckoutPayment(generatedInvoice, payment);
-                                        }
-                                    } else {
-                                        System.out.println("Error: Guest '" + searchName + "' is not currently checked in.");
+                                    catch (InvalidCredentialException e){
+                                        System.out.println(e.getMessage());
+                                        System.out.println("Try again");
                                     }
-                                    break;
                                 }
 
-                                case 7:
-                                    System.out.println("Logging Receptionist out...");
-                                    recRunning = false;
-                                    break;
-                                default:
-                                    System.out.println("Invalid choice.");
+
+
+                            while (recRunning) {
+                                System.out.println("\n--- FRONT DESK DASHBOARD ---");
+                                System.out.println("1. View All Guests");
+                                System.out.println("2. View All Rooms");
+                                System.out.println("3. View All Reservations");
+                                System.out.println("4. View All Invoices");
+                                System.out.println("5. Check-In a Guest");
+                                System.out.println("6. Check-Out a Guest & Process Payment");
+                                System.out.println("7. Logout");
+                                System.out.print("Select an option (1-7): ");
+
+                                switch (input.nextInt()) {
+                                    case 1:
+                                        frontDesk.viewAllGuests();
+                                        break;
+                                    case 2:
+                                        frontDesk.viewAllRooms();
+                                        break;
+                                    case 3:
+                                        frontDesk.viewAllReservations();
+                                        break;
+                                    case 4:
+                                        frontDesk.viewAllInvoices();
+                                        break;
+
+                                    // CHECK-IN LOGIC
+                                    case 5: {
+                                        System.out.print("\nEnter Guest Username to Check-In: ");
+                                        String searchName = input.next();
+                                        Reservation foundRes = null;
+
+                                        // Find their reservation in the database
+                                        for (Reservation r : HotelDatabase.reservations) {
+                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && !r.isCancelled()) {
+                                                foundRes = r;
+                                                break;
+                                            }
+                                        }
+
+                                        if (foundRes != null) {
+                                            frontDesk.checkIn(foundRes);
+                                        } else {
+                                            System.out.println("Error: No active reservation found for username '" + searchName + "'.");
+                                        }
+                                        break;
+                                    }
+
+                                    // CHECK-OUT LOGIC
+                                    case 6: {
+                                        System.out.print("\nEnter Guest Username to Check-Out: ");
+                                        String searchName = input.next();
+                                        Reservation foundRes = null;
+
+                                        // Find the reservation where they are currently checked in
+                                        for (Reservation r : HotelDatabase.reservations) {
+                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && r.isCheckedIn() && !r.isCheckedOut()) {
+                                                foundRes = r;
+                                                break;
+                                            }
+                                        }
+
+                                        if (foundRes != null) {
+                                            // Process the checkout and generate the invoice
+                                            Invoice generatedInvoice = frontDesk.checkOut(foundRes);
+
+                                            // Process the payment using Receptionist method
+                                            if (generatedInvoice != null) {
+                                                System.out.print("\nEnter amount paid by guest: $");
+                                                double payment = input.nextDouble();
+                                                frontDesk.processCheckoutPayment(generatedInvoice, payment);
+                                            }
+                                        } else {
+                                            System.out.println("Error: Guest '" + searchName + "' is not currently checked in.");
+                                        }
+                                        break;
+                                    }
+
+                                    case 7:
+                                        System.out.println("Logging Receptionist out...");
+                                        recRunning = false;
+                                        break;
+                                    default:
+                                        System.out.println("Invalid choice.");
+                                }
                             }
+                     break;   } case 3: {
+                            System.out.println("Returning to main menu....");
+                            exitstaff=true; break;  }
+
+                            default: {
+                            System.out.println("Invalid role selected. Returning to main menu.");
                         }
-                    }
-                    else {
-                        System.out.println("Invalid role selected. Returning to main menu.");
-                    }
-                    break;
-                }
+                        break;
+
+                        }
+                  break;  }
+                 break; }
+
 
                 case 3: {
-                    System.out.println("\n[Registration System pending Teammate 3's logic]");
-                    break;
-                }
+           boolean regsucc=false;
+     while(!regsucc) {
+         System.out.println("Enter username (must be 3+ characters): ");
+         String username = input.next();
+         System.out.println("Enter password (Must contain at least 8 characters,one uppercase,one lowercase,one digit,one special char):  ");
+         String pass = input.next();
+         System.out.println("Enter Date of birth (eg. 2007-05-05): ");
+         String birth = input.next();
+         LocalDate dateOfBirth = LocalDate.parse(birth);
+         System.out.println("Enter your address: ");
+         String address = input.next();
+         System.out.println("Enter your balance: ");
+         double balance = input.nextDouble();
+         System.out.println("Enter your room prefrences: ");
+         String pref = input.next();
+         System.out.println("Enter Gender (MAle/FEMALE): ");
+         String gen= input.next().toUpperCase();
+         Gender gender=Gender.valueOf(gen);
+         try { Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
+          regsucc=true;
+          break;
+         }
+         catch (WeakPwordException e){
+             System.out.println(e.getMessage());
+         } catch (InvalidDateException e) {
+             System.out.println(e.getMessage());
+         }
+     }     break; }
 
                 case 4: {
                     System.out.println("Shutting down the Hotel System. Goodbye!");
