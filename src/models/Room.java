@@ -1,5 +1,8 @@
 package models;
+import database.HotelDatabase;
+
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Room {
     private int roomNumber;
@@ -59,5 +62,35 @@ public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     @Override
     public String toString(){
     return "Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ amenities;
+    }
+    public void addAmenities(){
+    Scanner input=new Scanner(System.in);
+    System.out.println("---All Amenities---");
+        for(int i=0;i<HotelDatabase.allAmenities.size();i++){
+
+            System.out.println(i+1+"\t"+HotelDatabase.allAmenities.get(i));
+        }
+    System.out.println("Enter the name of the amenitiy you want to add to this room: ");
+    String amenity= input.nextLine().trim();
+    for(int i = 0;i< HotelDatabase.allAmenities.size();i++){
+        if(HotelDatabase.allAmenities.get(i).getName().trim().equalsIgnoreCase(amenity)){
+            for(int j=0;j<amenities.size();j++){
+                if(amenities.get(j).getName().equalsIgnoreCase(amenity)){
+                    System.out.println("this amenity is already in the room ");
+                    return;
+                }}
+         Amenity x= HotelDatabase.allAmenities.get(i);
+          amenities.add(x);
+System.out.println(HotelDatabase.allAmenities.get(i).getName()+ " is successfuly added to Room "+ this.roomNumber);
+                return;
+
+
+
+        }
+
+
+    }
+
+
     }
 }

@@ -10,7 +10,7 @@ public abstract class Staff {
     protected String password;
     protected LocalDate dateOfBirth;
     protected Role role;
-    protected int workingHours;
+    protected  int workingHours;
 
 
     public Staff(String username, String password, LocalDate dateOfBirth, Role role, int workingHours) {
@@ -51,7 +51,7 @@ public abstract class Staff {
         // The loop is perfectly written and ready to go.
         for (Reservation res : HotelDatabase.reservations) {
             // We use a placeholder string to prevent red compile errors until Teammate 4 finishes.
-            System.out.println("Guest username: "+ res.getGuest().getUsername()+"\t Checkin Date: "+res.getCheckInDate()+"\t Checkout date: "+res.getCheckOutDate()+"\t Reservation status: "+res.getReservationStatus());
+            System.out.println( "Guest username: "+ res.getGuest().getUsername()+"\t Checkin Date: "+res.getCheckInDate()+"\t Checkout date: "+res.getCheckOutDate()+"\t Reservation status: "+res.getReservationStatus());
         }
     }
 

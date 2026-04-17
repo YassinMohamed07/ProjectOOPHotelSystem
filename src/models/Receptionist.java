@@ -225,4 +225,18 @@ public class Receptionist extends Staff {
     public String toString() {
         return "Receptionist:" + username + ", Hours:" + workingHours;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

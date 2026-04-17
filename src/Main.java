@@ -263,6 +263,7 @@ break;
                                     mainAdmin=(Admin)Staff.login(username,pass);
 loggedIn=true;
 adminRunning=true;
+System.out.println("Log in successful: "+mainAdmin.getUsername());
                                 } catch (InvalidCredentialException e) {
                                     System.out.println(e.getMessage());
                                     System.out.println("Try again");
@@ -280,15 +281,17 @@ adminRunning=false;
 
 
                             while (adminRunning) {
+
                                 System.out.println("\n--- ADMIN DASHBOARD ---");
                                 System.out.println("1. View Data");
                                 System.out.println("2. Add Data");
                                 System.out.println("3. Update Data");
                                 System.out.println("4. Delete Data");
-                                System.out.println("5. Logout");
-                                System.out.print("Select an option (1-5): ");
+                                System.out.println("5. Register new staff");
+                                System.out.println("6. Logout");
+                                System.out.print("Select an option (1-6): ");
 
-                                switch (getValidIntInput(input, 1, 5)) {
+                                switch (getValidIntInput(input, 1, 6)) {
                                     case 1:
                                         mainAdmin.viewAll();
                                         break;
@@ -301,7 +304,24 @@ adminRunning=false;
                                     case 4:
                                         mainAdmin.delete();
                                         break;
-                                    case 5:
+                                    case 5:{
+                                        try {
+                                            mainAdmin.resgisterStaff();
+
+                                        } catch (InvalidDateException e) {
+                                            System.out.println(e.getMessage());
+                                        } catch (WeakPwordException e) {
+                                            System.out.println(e.getMessage());
+                                        } catch (Exception e) {
+                                            System.out.println(e.getMessage());
+                                        }
+
+
+
+
+
+                                 break;   }
+                                    case 6:
                                         System.out.println("Logging Admin out...");
                                         adminRunning = false;
                                         break;
@@ -328,6 +348,8 @@ adminRunning=false;
                                         frontDesk = (Receptionist) Staff.login(username, pass);
                                         loggedIn = true;
                                         recRunning=true;
+                                        System.out.println("Log in successful: "+frontDesk.getUsername());
+
                                     }
                                     catch (InvalidCredentialException e){
                                         System.out.println(e.getMessage());
@@ -457,9 +479,10 @@ adminRunning=false;
          String address = input.next();
          System.out.println("Enter your balance: ");
          double balance = input.nextDouble();
+         input.nextLine();
          System.out.println("Enter your room prefrences: ");
-         String pref = input.next();
-         System.out.println("Enter Gender (MAle/FEMALE): ");
+         String pref = input.nextLine();
+         System.out.println("Enter Gender (MAlE/FEMALE): ");
          String gen= input.next().toUpperCase();
          Gender gender=Gender.valueOf(gen);
          try { Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);

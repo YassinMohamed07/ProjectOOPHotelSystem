@@ -160,7 +160,23 @@ public class Admin extends Staff implements Manageable {
         HotelDatabase.roomTypes.add(newType);
         System.out.println("Success: Room Type '" + name + "' created successfully!");
     }
+    private void addAmenityToAROOM(int number){
 
+       Room selectedroom;
+       for(int i=0;i<HotelDatabase.rooms.size();i++){
+           if(HotelDatabase.rooms.get(i).getRoomNumber()==number){
+               selectedroom=HotelDatabase.rooms.get(i);
+               selectedroom.addAmenities();
+               return;
+           }
+
+
+       }
+
+
+
+
+    }
     // ADD AMENITY
     private void addAmenity() {
         Scanner scanner = new Scanner(System.in);
@@ -193,49 +209,59 @@ public class Admin extends Staff implements Manageable {
     // UPDATE ROOM
     private void updateRoom() {
         Scanner sc = new Scanner(System.in);
-        System.out.println("\n--- Update Room Type ---");
+        System.out.println("\n--- Update Room  ---");
         System.out.print("Enter Room Number to update: ");
         int num = sc.nextInt();
+System.out.println("1. Update Room type");
+System.out.println("2. Add an amenity");
+System.out.println("Select an option (1-2): ");
+switch(sc.nextInt()) {
 
-        // Find the room
-        Room roomToUpdate = null;
-        for (Room r : HotelDatabase.rooms) {
-            if (r.getRoomNumber() == num) {
-                roomToUpdate = r;
-                break;
+    case 1: {
+            // Find the room
+            Room roomToUpdate = null;
+            for (Room r : HotelDatabase.rooms) {
+                if (r.getRoomNumber() == num) {
+                    roomToUpdate = r;
+                    break;
+                }
             }
-        }
 
-        if (roomToUpdate == null) {
-            System.out.println("Error: Room #" + num + " not found in the system.");
-            return;
-        }
+            if (roomToUpdate == null) {
+                System.out.println("Error: Room #" + num + " not found in the system.");
+                return;
+            }
 
-        // State Visibility
-        System.out.println("Room found! Current Type: " + roomToUpdate.getType().getTypeName());
+            // State Visibility
+            System.out.println("Room found! Current Type: " + roomToUpdate.getType().getTypeName());
 
-        // Dynamic Menu for new types
-        System.out.println("Select a new Room Type:");
-        for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
-            System.out.println((i + 1) + ". " + HotelDatabase.roomTypes.get(i).getTypeName());
-        }
-        System.out.print("Choice: ");
-        int choice = sc.nextInt();
+            // Dynamic Menu for new types
+            System.out.println("Select a new Room Type:");
+            for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
+                System.out.println((i + 1) + ". " + HotelDatabase.roomTypes.get(i).getTypeName());
+            }
+            System.out.print("Choice: ");
+            int choice = sc.nextInt();
 
-        // Safe Array Access & Redundancy Check
-        if (choice > 0 && choice <= HotelDatabase.roomTypes.size()) {
-            RoomType newType = HotelDatabase.roomTypes.get(choice - 1);
+            // Safe Array Access & Redundancy Check
+            if (choice > 0 && choice <= HotelDatabase.roomTypes.size()) {
+                RoomType newType = HotelDatabase.roomTypes.get(choice - 1);
 
-            if (roomToUpdate.getType() == newType) {
-                System.out.println("Notice: Room #" + num + " is already a " + newType.getTypeName() + ". No changes made.");
+                if (roomToUpdate.getType() == newType) {
+                    System.out.println("Notice: Room #" + num + " is already a " + newType.getTypeName() + ". No changes made.");
+                } else {
+                    roomToUpdate.setType(newType);
+                    System.out.println("Success: Room #" + num + " updated to " + newType.getTypeName() + ".");
+                }
             } else {
-                roomToUpdate.setType(newType);
-                System.out.println("Success: Room #" + num + " updated to " + newType.getTypeName() + ".");
-            }
-        } else {
-            System.out.println("Error: Invalid selection. Update cancelled.");
+                System.out.println("Error: Invalid selection. Update cancelled.");
+            }  break; }
+    case 2: {  addAmenityToAROOM(num); break;  }
+
+    default :{   System.out.println("Invalid choice.");
+        System.out.println("Returning to main menu....");
         }
-    }
+    }}
 
     // UPDATE ROOM TYPE
     private void updateRoomType() {
@@ -431,11 +457,43 @@ public class Admin extends Staff implements Manageable {
             System.out.println("No amenities in the system.");
             return;
         }
-        for (Amenity a : HotelDatabase.allAmenities) {
-            System.out.println("- " + a.getName() + " ($" + a.getPrice() + ")");
-        }
-    }
+for(int i=0;i<HotelDatabase.allAmenities.size();i++){
 
+    System.out.println("- " + HotelDatabase.allAmenities.get(i).getName() + " ($" + HotelDatabase.allAmenities.get(i).getPrice() + ")");
+}
+    }
+public  void resgisterStaff() throws InvalidDateException ,WeakPwordException {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Enter username (must be at least 3 characters): ");
+    String username = input.next();
+    System.out.println("Enter Password (must be at least 8 characters,contains at least 1 uppercase,1 lowercase, 1 digit , 1 special char): ");
+    String pass = input.next();
+    System.out.println("Enter date of birth (eg. 2007-10-14): ");
+    String d = input.next();
+    LocalDate dateofBirth = LocalDate.parse(d);
+    ValidationUtil.validateUsername(username);
+    ValidationUtil.validateDateOfBirth(dateofBirth);
+    ValidationUtil.validatePassword(pass);
+    System.out.println("Enter Role (ADMIN/RECEPTIONIST): ");
+    String r = input.next().toUpperCase();
+    Role role = Role.valueOf(r);
+    System.out.println("Enter number of working hours: ");
+   int hours = input.nextInt();
+if(role.equals(Role.ADMIN)){
+    HotelDatabase.staff.add(new Admin(username,pass,dateofBirth,workingHours));
+    System.out.println("Admin: "+username+" is added successfully to hotel system");
+    return;
+}
+if(role.equals(Role.RECEPTIONIST)){
+    HotelDatabase.staff.add(new Receptionist(username,pass,dateofBirth,workingHours));
+    System.out.println("Receptionist: "+username+" is added successfully to hotel system");
+    return;
+}
+ System.out.println("Unable to register new staff");
+return;
+
+
+}
 
 
 }
