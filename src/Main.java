@@ -245,7 +245,7 @@ catch(Exception e ){
 
                         // ADMIN
                         switch(roleChoice){
-                    case 1:    { boolean adminRunning = true;
+                    case 1:    { boolean adminRunning = false;
                             Admin mainAdmin = null;
                         String pass=null;
                         String username=null;
@@ -331,7 +331,7 @@ adminRunning=false;
                                 }
                             }
                    break;     } case 2: {
-                                boolean recRunning = true;
+                                boolean recRunning = false;
                                 boolean loggedIn = false;
                                 Receptionist frontDesk = null;
                                 while (!loggedIn) {
