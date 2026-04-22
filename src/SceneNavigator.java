@@ -36,7 +36,6 @@ public class SceneNavigator {
                     ((GuestAware) controller).setGuest(guest);
                 }
             }
-
             rootPane.getChildren().setAll(view);
         } catch (IOException e) {
             System.err.println("Failed to load FXML: " + fxmlFile);

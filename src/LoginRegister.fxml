@@ -14,7 +14,6 @@
           AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
           AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
 
-
         <Label text="🏨 Hotel Reservation System" styleClass="title-label"/>
         <Label text="Welcome — Please login or create an account" styleClass="subtitle-label"/>
 

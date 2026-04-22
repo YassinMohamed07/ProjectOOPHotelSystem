@@ -8,8 +8,8 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
- //Controller for the Login / Register screen.
- //Handles guest login, staff login, and new guest registration.
+//Controller for the Login / Register screen.
+//Handles guest login, staff login, and new guest registration.
 public class LoginRegisterController implements Initializable {
 
     //Login Tab Fields
@@ -39,7 +39,7 @@ public class LoginRegisterController implements Initializable {
         registerStatusLabel.setText("");
     }
 
-     //Handles guest login button click.
+    //Handles guest login button click.
     @FXML
     private void handleGuestLogin() {
         String username = loginUsername.getText().trim();
