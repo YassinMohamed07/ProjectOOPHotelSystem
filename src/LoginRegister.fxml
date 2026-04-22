@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="LoginRegisterController"
+            prefHeight="650" prefWidth="900"
+            styleClass="root-pane">
+
+    <VBox alignment="CENTER" spacing="20"
+          AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+          AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+
+        <Label text="🏨 Hotel Reservation System" styleClass="title-label"/>
+        <Label text="Welcome — Please login or create an account" styleClass="subtitle-label"/>
+
+
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" maxWidth="480"
+                 style="-fx-padding: 0;">
+
+
+            <Tab text="  Guest Login  ">
+                <VBox spacing="18" alignment="CENTER" style="-fx-padding: 10 20 20 20;">
+
+                    <VBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Username" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                        <TextField fx:id="loginUsername" promptText="Enter your username"/>
+                    </VBox>
+
+                    <VBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Password" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                        <PasswordField fx:id="loginPassword" promptText="Enter your password"/>
+                    </VBox>
+
+                    <Button text="Login as Guest" onAction="#handleGuestLogin"
+                            prefWidth="260" prefHeight="42" styleClass="btn-primary"/>
+
+                    <Separator/>
+
+                    <Label text="Staff Login" style="-fx-text-fill: #7f8c8d; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+                    <VBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Staff Username" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                        <TextField fx:id="staffUsername" promptText="Enter staff username"/>
+                    </VBox>
+
+                    <VBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Staff Password" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                        <PasswordField fx:id="staffPassword" promptText="Enter staff password"/>
+                    </VBox>
+
+                    <Button text="Login as Staff" onAction="#handleStaffLogin"
+                            prefWidth="260" prefHeight="42" styleClass="btn-secondary"
+                            style="-fx-text-fill: #2c3e50; -fx-border-color: #bdc3c7;"/>
+
+                    <Label fx:id="loginStatusLabel" text="" wrapText="true" maxWidth="380"/>
+                </VBox>
+            </Tab>
+
+
+            <Tab text="  Register  ">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                    <VBox spacing="14" alignment="CENTER" style="-fx-padding: 10 20 20 20;">
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Username (3+ characters)" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <TextField fx:id="regUsername" promptText="Choose a username"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Password (8+ chars, upper, lower, digit, special)" style="-fx-text-fill: #37474f; -fx-font-size: 12px; -fx-font-weight: bold;"/>
+                            <PasswordField fx:id="regPassword" promptText="Create a strong password"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Date of Birth" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <DatePicker fx:id="regDob" promptText="Select date of birth" prefWidth="400"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Gender" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <ComboBox fx:id="regGender" promptText="Select gender" prefWidth="400"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Initial Balance ($)" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <TextField fx:id="regBalance" promptText="Enter your balance"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Address" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <TextField fx:id="regAddress" promptText="Enter your address"/>
+                        </VBox>
+
+                        <VBox spacing="4" alignment="CENTER_LEFT">
+                            <Label text="Room Preferences" style="-fx-text-fill: #37474f; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            <TextField fx:id="regPreferences" promptText="e.g., A room with strong wifi"/>
+                        </VBox>
+
+                        <Button text="Register" onAction="#handleRegister"
+                                prefWidth="260" prefHeight="42" styleClass="btn-success"/>
+
+                        <Label fx:id="registerStatusLabel" text="" wrapText="true" maxWidth="380"/>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+        </TabPane>
+    </VBox>
+</AnchorPane>

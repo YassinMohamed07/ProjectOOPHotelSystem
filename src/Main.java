@@ -22,7 +22,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        Parent root = FXMLLoader.load(getClass().getResource("HotelSystem.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
         Scene scene = new Scene(root);
         Image icon = new Image("hotel.png");
         primaryStage.getIcons().add(icon);
@@ -35,7 +35,7 @@ public class Main extends Application {
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
-//        launch(args);
+      launch(args);
         boolean exitt=false;
         Scanner input = new Scanner(System.in);
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
