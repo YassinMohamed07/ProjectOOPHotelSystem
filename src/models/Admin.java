@@ -167,6 +167,7 @@ public class Admin extends Staff implements Manageable {
            if(HotelDatabase.rooms.get(i).getRoomNumber()==number){
                selectedroom=HotelDatabase.rooms.get(i);
                selectedroom.addAmenities();
+
                return;
            }
 
@@ -182,7 +183,7 @@ public class Admin extends Staff implements Manageable {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Add New Amenity ---");
         System.out.print("Enter Amenity Name (e.g., Spa): ");
-        String name = scanner.next();
+        String name = scanner.nextLine();
 
         // Prevent duplicate Amenities
         for (Amenity a : HotelDatabase.allAmenities) {
@@ -194,7 +195,7 @@ public class Admin extends Staff implements Manageable {
 
         System.out.print("Enter Amenity Price: $");
         double price = scanner.nextDouble();
-
+scanner.nextLine();
         // Prevent negative prices
         if (price < 0) {
             System.out.println("Error: Price cannot be negative. Creation failed.");

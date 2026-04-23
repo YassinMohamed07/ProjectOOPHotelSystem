@@ -15,11 +15,20 @@ public class Reservation  {
    private boolean checkedIn=false;
    private boolean checkedOut=false;
    private boolean isPaid=false;
+    private java.util.List<Amenity> chosenAmenities = new java.util.ArrayList<>();
+    public void addChosenAmenity(Amenity amenity) {
+        this.chosenAmenities.add(amenity);
+    }
+
+    public java.util.List<Amenity> getChosenAmenities() {
+        return this.chosenAmenities;
+    }
     public Reservation(){}
     public Reservation(Guest guest,Room room,LocalDate checkIn,LocalDate checkOut) throws InvalidDateException {
         if (checkIn.isAfter(checkOut) || checkIn.equals(checkOut)) {
             throw new InvalidDateException("Error: Check-out must be after check-in.");
         }
+
 int length = HotelDatabase.reservations.size();
         for(int i=0;i<length;i++) {
 if ((HotelDatabase.reservations.get(i).getRoom().getRoomNumber()==room.getRoomNumber())&&(HotelDatabase.reservations.get(i)).checkInDate.equals(checkIn))

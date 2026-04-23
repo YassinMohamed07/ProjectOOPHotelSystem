@@ -7,7 +7,7 @@ import java.util.Scanner;
 public class Room {
     private int roomNumber;
     private RoomType type;
-    private ArrayList<Amenity> amenities;
+    private ArrayList<Amenity> amenities= new ArrayList<>();
 public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     this.roomNumber=roomNumber;
     this.type=type;
@@ -61,7 +61,13 @@ public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     }
     @Override
     public String toString(){
+    if (amenities.isEmpty())
+    {
+         return"Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ "No Amenties in this room";
+    }
+
     return "Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ amenities;
+
     }
     public void addAmenities(){
     Scanner input=new Scanner(System.in);
@@ -73,14 +79,14 @@ public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     System.out.println("Enter the name of the amenitiy you want to add to this room: ");
     String amenity= input.nextLine().trim();
     for(int i = 0;i< HotelDatabase.allAmenities.size();i++){
-        if(HotelDatabase.allAmenities.get(i).getName().trim().equalsIgnoreCase(amenity)){
+        if(HotelDatabase.allAmenities.get(i).getName().equalsIgnoreCase(amenity)){
             for(int j=0;j<amenities.size();j++){
                 if(amenities.get(j).getName().equalsIgnoreCase(amenity)){
                     System.out.println("this amenity is already in the room ");
                     return;
                 }}
-         Amenity x= HotelDatabase.allAmenities.get(i);
-          amenities.add(x);
+
+          amenities.add(HotelDatabase.allAmenities.get(i));
 System.out.println(HotelDatabase.allAmenities.get(i).getName()+ " is successfuly added to Room "+ this.roomNumber);
                 return;
 
