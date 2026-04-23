@@ -38,8 +38,7 @@ public abstract class Staff {
             return;
         }
         for (Room r : HotelDatabase.rooms) {
-            System.out.println("Room #" + r.getRoomNumber() + " | Type: " + r.getType().getTypeName());
-        }
+System.out.println(r);        }
     }
     public void viewAllReservations() {
         System.out.println("\n--- Current Reservations ---");
