@@ -30,10 +30,11 @@ roomTypes.add(new RoomType("Double",3500));
 roomTypes.add(new RoomType("Suite",4500));
 allAmenities.add(new Amenity("Wifi",200));
 allAmenities.add(new Amenity("Mini Bar",250));
-rooms.add(new Room(202,new RoomType("Single",2000),allAmenities,Roomtypee.SINGLE));
-rooms.add(new Room(115,new RoomType("Suite",4500),allAmenities,Roomtypee.SUITE));
+rooms.add(new Room(202, new RoomType("Single", 2000), new ArrayList<>(allAmenities), Roomtypee.SINGLE));
+rooms.add(new Room(115, new RoomType("Suite", 4500), new ArrayList<>(allAmenities), Roomtypee.SUITE));
 reservations.add(new Reservation(guests.get(0),rooms.get(0),LocalDate.of(2026,6,15),LocalDate.of(2026,6,17)));
 reservations.add(new Reservation(guests.get(1),rooms.get(1),LocalDate.of(2026,4,25),LocalDate.of(2026,4,27)));
+
 invoices.add(new Invoice(reservations.get(0)));
 invoices.add(new Invoice(reservations.get(1)));
 reservations.get(0).setInvoice(invoices.get(0));

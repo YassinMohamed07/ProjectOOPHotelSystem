@@ -390,21 +390,43 @@ adminRunning=false;
                                     case 5: {
                                         System.out.print("\nEnter Guest Username to Check-In: ");
                                         String searchName = input.next();
-                                        Reservation foundRes = null;
 
-                                        // Find their reservation in the database
+                                        // Collect ALL active reservations for this guest
+                                        List<Reservation> guestReservations = new ArrayList<>();
                                         for (Reservation r : HotelDatabase.reservations) {
                                             if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && !r.isCancelled()) {
-                                                foundRes = r;
-                                                break;
+                                                guestReservations.add(r);
                                             }
                                         }
 
-                                        if (foundRes != null) {
-                                            frontDesk.checkIn(foundRes);
-                                        } else {
+                                        if (guestReservations.isEmpty()) {
                                             System.out.println("Error: No active reservation found for username '" + searchName + "'.");
+                                            break;
                                         }
+
+                                        // If only one reservation, use it directly
+                                        if (guestReservations.size() == 1) {
+                                            frontDesk.checkIn(guestReservations.get(0));
+                                            break;
+                                        }
+
+                                        // Multiple reservations — show numbered list
+                                        System.out.println("\n--- Active Reservations for " + searchName + " ---");
+                                        for (int i = 0; i < guestReservations.size(); i++) {
+                                            Reservation res = guestReservations.get(i);
+                                            System.out.println((i + 1) + ". Room #" + res.getRoom().getRoomNumber()
+                                                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                                                    + " | Status: " + res.getReservationStatus());
+                                        }
+                                        System.out.print("\nSelect reservation number to check in (0 to cancel): ");
+
+                                        int choice = getValidIntInput(input, 0, guestReservations.size());
+                                        if (choice == 0) {
+                                            System.out.println("Check-in cancelled.");
+                                            break;
+                                        }
+
+                                        frontDesk.checkIn(guestReservations.get(choice - 1));
                                         break;
                                     }
 
@@ -412,28 +434,52 @@ adminRunning=false;
                                     case 6: {
                                         System.out.print("\nEnter Guest Username to Check-Out: ");
                                         String searchName = input.next();
-                                        Reservation foundRes = null;
 
-                                        // Find the reservation where they are currently checked in
+                                        // Collect ALL checked-in, not-checked-out reservations
+                                        List<Reservation> guestReservations = new ArrayList<>();
                                         for (Reservation r : HotelDatabase.reservations) {
-                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && r.isCheckedIn() && !r.isCheckedOut()) {
-                                                foundRes = r;
-                                                break;
+                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName)
+                                                    && r.isCheckedIn()
+                                                    && !r.isPaid()) {
+                                                guestReservations.add(r);
                                             }
                                         }
 
-                                        if (foundRes != null) {
-                                            // Process the checkout and generate the invoice
-                                            Invoice generatedInvoice = frontDesk.checkOut(foundRes);
+                                        if (guestReservations.isEmpty()) {
+                                            System.out.println("Error: Guest '" + searchName + "' is not currently checked in.");
+                                            break;
+                                        }
 
-                                            // Process the payment using Receptionist method
+                                        if (guestReservations.size() == 1) {
+                                            Invoice generatedInvoice = frontDesk.checkOut(guestReservations.get(0));
                                             if (generatedInvoice != null) {
                                                 System.out.print("\nEnter amount paid by guest: $");
                                                 double payment = input.nextDouble();
                                                 frontDesk.processCheckoutPayment(generatedInvoice, payment);
                                             }
-                                        } else {
-                                            System.out.println("Error: Guest '" + searchName + "' is not currently checked in.");
+                                            break;
+                                        }
+
+                                        // Multiple reservations — show list
+                                        System.out.println("\n--- Checked-In Reservations for " + searchName + " ---");
+                                        for (int i = 0; i < guestReservations.size(); i++) {
+                                            Reservation res = guestReservations.get(i);
+                                            System.out.println((i + 1) + ". Room #" + res.getRoom().getRoomNumber()
+                                                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate());
+                                        }
+                                        System.out.print("\nSelect reservation number to check out (0 to cancel): ");
+
+                                        int choice = getValidIntInput(input, 0, guestReservations.size());
+                                        if (choice == 0) {
+                                            System.out.println("Check-out cancelled.");
+                                            break;
+                                        }
+
+                                        Invoice generatedInvoice = frontDesk.checkOut(guestReservations.get(choice - 1));
+                                        if (generatedInvoice != null) {
+                                            System.out.print("\nEnter amount paid by guest: $");
+                                            double payment = input.nextDouble();
+                                            frontDesk.processCheckoutPayment(generatedInvoice, payment);
                                         }
                                         break;
                                     }

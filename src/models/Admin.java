@@ -480,12 +480,12 @@ public  void resgisterStaff() throws InvalidDateException ,WeakPwordException {
     System.out.println("Enter number of working hours: ");
    int hours = input.nextInt();
 if(role.equals(Role.ADMIN)){
-    HotelDatabase.staff.add(new Admin(username,pass,dateofBirth,workingHours));
+    HotelDatabase.staff.add(new Admin(username,pass,dateofBirth,hours));
     System.out.println("Admin: "+username+" is added successfully to hotel system");
     return;
 }
 if(role.equals(Role.RECEPTIONIST)){
-    HotelDatabase.staff.add(new Receptionist(username,pass,dateofBirth,workingHours));
+    HotelDatabase.staff.add(new Receptionist(username,pass,dateofBirth,hours));
     System.out.println("Receptionist: "+username+" is added successfully to hotel system");
     return;
 }
