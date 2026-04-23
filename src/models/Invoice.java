@@ -38,8 +38,22 @@ public class Invoice implements Payable {
         // ... rest of your methods (calculateTotal, processPayment, etc.)
 
     @Override
-    public double calculateTotal(){
-        return numberOfNights*roomPricePerOneNight+(0.14*numberOfNights*roomPricePerOneNight);
+    public double calculateTotal() {
+        // 1. Base Room Cost (Price per night * nights)
+        // Note: roomPricePerOneNight already includes the room's default amenities
+        double baseRoomTotal = numberOfNights * roomPricePerOneNight;
+
+        // 2. Extra Amenities Cost (Price of each extra * nights)
+        double extraAmenitiesTotal = 0;
+        for (Amenity a : reservation.getChosenAmenities()) {
+            extraAmenitiesTotal += (a.getPrice() * numberOfNights);
+        }
+
+        // 3. Subtotal before tax
+        double subtotal = baseRoomTotal + extraAmenitiesTotal;
+
+        // 4. Final Total with 14% Tax
+        return subtotal * 1.14;
     }
 public boolean processPayment(double amountPaid){
         if(amountPaid>=calculateTotal()){

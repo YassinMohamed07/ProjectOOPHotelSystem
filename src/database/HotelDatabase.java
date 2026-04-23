@@ -38,6 +38,6 @@ invoices.add(new Invoice(reservations.get(0)));
 invoices.add(new Invoice(reservations.get(1)));
 reservations.get(0).setInvoice(invoices.get(0));
 reservations.get(1).setInvoice(invoices.get(1));
-
+rooms.get(0).addAmenity(allAmenities.get(0));
     }
 }

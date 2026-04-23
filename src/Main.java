@@ -83,17 +83,17 @@ public class Main extends Application {
                         case 1: {
                             boolean searchSuccessful = false;
                             List<Room> availableRooms = null;
-                            LocalDate checkIn=null;
-                            LocalDate checkOut=null;
+                            LocalDate checkIn = null;
+                            LocalDate checkOut = null;
                             while (!searchSuccessful) {
                                 try {
                                     System.out.println("Enter wanted checkin date (e.g., 2026-04-26):");
                                     String checkInStr = input.next();
-                                     checkIn = LocalDate.parse(checkInStr);
+                                    checkIn = LocalDate.parse(checkInStr);
 
                                     System.out.println("Enter wanted checkout date:");
                                     String checkOutStr = input.next();
-                                     checkOut = LocalDate.parse(checkOutStr);
+                                    checkOut = LocalDate.parse(checkOutStr);
 
                                     System.out.println("Enter Room type (SINGLE, DOUBLE, SUITE):");
                                     String typeStr = input.next().toUpperCase();
@@ -102,15 +102,8 @@ public class Main extends Application {
                                     System.out.println("Enter your maximum budget per one night:");
                                     double maxprice = input.nextDouble();
 
-
-                                    // This calls your logic and prints the list
-                                     availableRooms=  Guest.searchAvailableRooms(checkIn,checkOut,type,maxprice);
-
-                                    // If we reach this line without an exception, the search worked!
+                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, type, maxprice);
                                     searchSuccessful = true;
-                                    if (availableRooms.isEmpty()) {
-                                        break;
-                                    }
 
                                 } catch (DateTimeParseException e) {
                                     System.out.println("Error: Invalid date format. Please use YYYY-MM-DD.");
@@ -119,34 +112,67 @@ public class Main extends Application {
                                 } catch (InvalidDateException e) {
                                     System.out.println("Error: " + e.getMessage());
                                 }
-                                }
-                            System.out.println("\n--- Available Rooms found  ---");
-                            if(availableRooms.isEmpty()){System.out.println("No rooms  matched this description"); break;}
-                            for (int i = 0; i < availableRooms.size(); i++) {
+                            }
 
-                                // This uses the toString() you have in your Room class
-                                System.out.println(i+1+ ". " + availableRooms.get(i));
+                            if (availableRooms == null || availableRooms.isEmpty()) {
+                                System.out.println("No rooms matched this description.");
+                                break;
+                            }
+
+                            System.out.println("\n--- Available Rooms found ---");
+                            for (int i = 0; i < availableRooms.size(); i++) {
+                                System.out.println(i + 1 + ". " + availableRooms.get(i));
                             }
                             System.out.print("\nWhich room do you want to book: ");
                             int choice = input.nextInt();
 
-                            // 3. Logic to "take" the room using the stored dates
                             if (choice < 1 || choice > availableRooms.size()) {
-                                System.out.println("Invalid selection. Must be 1-" + availableRooms.size());
+                                System.out.println("Invalid selection.");
                                 break;
                             }
                             Room selectedRoom = availableRooms.get(choice - 1);
 
-                                try {
-                                    // We use the 'checkIn' and 'checkOut' variables you defined at the start of Case 1
-                                    guest.makeReservation(selectedRoom, checkIn, checkOut);
+                            try {
+                                // 1. Create the reservation
+                                Reservation newRes = guest.makeReservation(selectedRoom, checkIn, checkOut);
+                                System.out.println("Room reserved successfully!");
 
-                                } catch (InvalidDateException e) {
-                                    System.out.println("Error: " + e.getMessage());
+                                // 2. AMENITY SELECTION LOGIC
+                                System.out.print("\nWould you like to add extra amenities? (y/n): ");
+                                if (input.next().equalsIgnoreCase("y")) {
+                                    boolean adding = true;
+                                    while (adding) {
+                                        System.out.println("\n--- Extra Amenities Menu ---");
+                                        for (int i = 0; i < HotelDatabase.allAmenities.size(); i++) {
+                                            Amenity a = HotelDatabase.allAmenities.get(i);
+                                            System.out.println((i + 1) + ". " + a.getName() + " ($" + a.getPrice() + "/night)");
+                                        }
+                                        System.out.print("Select amenity number (or 0 to finish): ");
+                                        int amChoice = input.nextInt();
+
+                                        if (amChoice == 0) {
+                                            adding = false;
+                                        } else if (amChoice > 0 && amChoice <= HotelDatabase.allAmenities.size()) {
+                                            Amenity selected = HotelDatabase.allAmenities.get(amChoice - 1);
+                                            newRes.addChosenAmenity(selected); // Link to the reservation
+                                            System.out.println(">> " + selected.getName() + " added to your stay.");
+                                        } else {
+                                            System.out.println("Invalid choice.");
+                                        }
+                                    }
                                 }
 
-                                   break;
-                                }
+                                // 3. Generate the invoice immediately so the guest sees the total
+                                Invoice inv = new Invoice(newRes);
+                                newRes.setInvoice(inv);
+                                System.out.println("\nBooking Process Complete!");
+                                System.out.println("Total Estimate (including extras & tax): $" + String.format("%.2f", inv.calculateTotal()));
+
+                            } catch (InvalidDateException e) {
+                                System.out.println("Error: " + e.getMessage());
+                            }
+                            break;
+                        }
                                  case 2: {
                                    List<Reservation> myReservations=guest.viewReservations();
                             System.out.println("---My reservations---");
@@ -208,10 +234,6 @@ try{System.out.println(guest.checkout(myReservations.get(--choice)));}
 catch(Exception e ){
     System.out.println(e.getMessage());
 }
-
-
-
-
 
       break; }
 
