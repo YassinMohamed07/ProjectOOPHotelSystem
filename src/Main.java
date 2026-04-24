@@ -18,24 +18,23 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.ConsoleHandler;
 
-public class Main extends Application {
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-
-        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
-        Scene scene = new Scene(root);
-        Image icon = new Image("hotel.png");
-        primaryStage.getIcons().add(icon);
-        primaryStage.setTitle("Hotel Reservation System");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
+public  class Main  {
+//    public void start(Stage primaryStage) throws Exception {
+//
+//        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
+//        Scene scene = new Scene(root);
+//        Image icon = new Image("hotel.png");
+//        primaryStage.getIcons().add(icon);
+//        primaryStage.setTitle("Hotel Reservation System");
+//        primaryStage.setScene(scene);
+//        primaryStage.show();
+//    }
 
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
-        launch(args);
-        boolean exitt=false;
+//        launch(args);
+       boolean exitt=false;
         Scanner input = new Scanner(System.in);
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
         while (!exitt) {
