@@ -31,11 +31,10 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
-      launch(args);
+        launch(args);
         boolean exitt=false;
         Scanner input = new Scanner(System.in);
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
@@ -47,7 +46,6 @@ public class Main extends Application {
             System.out.print("Select an option (1-4): ");
             switch (getValidIntInput(input, 1, 4)) {
                 case 1:{
-
                     boolean loggedIn = false; // Flag to track success
                     Guest guest=null;
                     while (!loggedIn) {
@@ -55,7 +53,6 @@ public class Main extends Application {
                         String username = input.next();
                         System.out.println("Enter Password: ");
                         String password = input.next();
-
                         try {
                             // Attempt login
                             guest=Guest.login(username, password);
@@ -63,37 +60,35 @@ public class Main extends Application {
                             // If the line above doesn't throw an exception, login is successful
                             loggedIn = true;
 
-
                         } catch (InvalidCredentialException ex) {
                             // If an exception is caught, the loop runs again
                             System.out.println("An error occurred: " + ex.getMessage());
                             System.out.println("Please try again.");
                         }
                     }
-                         boolean exitGuest=false;
+                    boolean exitGuest=false;
                     while(!exitGuest){
-                    System.out.println("\n--- Guest Menu ---");
-                    System.out.println("1. Search & Book a Room");
-                    System.out.println("2. View My Reservations");
-                    System.out.println("3. Cancel a Reservation");
-                    System.out.println("4. Checkout & Pay");
-                    System.out.println("5. Exit ");
-                    System.out.println("Select an option (1-5): ");
-                    switch (getValidIntInput(input, 1, 5)){
-                        case 1: {
-                            boolean searchSuccessful = false;
-                            List<Room> availableRooms = null;
-                            LocalDate checkIn = null;
-                            LocalDate checkOut = null;
-                            while (!searchSuccessful) {
-                                try {
-                                    System.out.println("Enter wanted checkin date (e.g., 2026-04-26):");
-                                    String checkInStr = input.next();
-                                    checkIn = LocalDate.parse(checkInStr);
-
-                                    System.out.println("Enter wanted checkout date:");
-                                    String checkOutStr = input.next();
-                                    checkOut = LocalDate.parse(checkOutStr);
+                        System.out.println("\n--- Guest Menu ---");
+                        System.out.println("1. Search & Book a Room");
+                        System.out.println("2. View My Reservations");
+                        System.out.println("3. Cancel a Reservation");
+                        System.out.println("4. Checkout & Pay");
+                        System.out.println("5. Exit ");
+                        System.out.println("Select an option (1-5): ");
+                        switch (getValidIntInput(input, 1, 5)){
+                            case 1: {
+                                boolean searchSuccessful = false;
+                                List<Room> availableRooms = null;
+                                LocalDate checkIn = null;
+                                LocalDate checkOut = null;
+                                while (!searchSuccessful) {
+                                    try {
+                                        System.out.println("Enter wanted checkin date (e.g., 2026-04-26):");
+                                        String checkInStr = input.next();
+                                        checkIn = LocalDate.parse(checkInStr);
+                                        System.out.println("Enter wanted checkout date:");
+                                        String checkOutStr = input.next();
+                                        checkOut = LocalDate.parse(checkOutStr);
 
                                     System.out.println("Enter Room type (SINGLE, DOUBLE, SUITE):");
                                     String typeStr = input.next().toUpperCase();

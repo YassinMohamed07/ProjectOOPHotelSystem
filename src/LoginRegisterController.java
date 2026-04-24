@@ -2,14 +2,15 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import models.*;
+import database.HotelDatabase;
 import exceptions.*;
-import javafx.fxml.FXMLLoader;
+import utils.ValidationUtil;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 //Controller for the Login / Register screen.
-//Handles guest login, staff login, and new guest registration.
+//Handles guest login, staff login, guest registration, and staff registration.
 public class LoginRegisterController implements Initializable {
 
     //Login Tab Fields
@@ -19,7 +20,7 @@ public class LoginRegisterController implements Initializable {
     @FXML private PasswordField staffPassword;
     @FXML private Label loginStatusLabel;
 
-    //Register Tab Fields
+    //Guest Register Tab Fields
     @FXML private TextField regUsername;
     @FXML private PasswordField regPassword;
     @FXML private DatePicker regDob;
@@ -30,15 +31,22 @@ public class LoginRegisterController implements Initializable {
     @FXML private Label registerStatusLabel;
     @FXML private TabPane tabPane;
 
+    //Staff Register Tab Fields
+    @FXML private TextField staffRegUsername;
+    @FXML private PasswordField staffRegPassword;
+    @FXML private DatePicker staffRegDob;
+    @FXML private ComboBox<Role> staffRegRole;
+    @FXML private TextField staffRegHours;
+    @FXML private Label staffRegStatusLabel;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Populate gender combo box
         regGender.getItems().addAll(Gender.values());
-        // Clear status labels
+        staffRegRole.getItems().addAll(Role.values());
         loginStatusLabel.setText("");
         registerStatusLabel.setText("");
+        staffRegStatusLabel.setText("");
     }
-
     //Handles guest login button click.
     @FXML
     private void handleGuestLogin() {
@@ -52,15 +60,13 @@ public class LoginRegisterController implements Initializable {
         }
         try {
             Guest guest = Guest.login(username, password);
-            // Navigate to Guest Dashboard
             SceneNavigator.navigateTo("GuestDashboard.fxml", guest);
         } catch (InvalidCredentialException e) {
             loginStatusLabel.setText(e.getMessage());
             loginStatusLabel.getStyleClass().setAll("label", "status-error");
         }
     }
-
-    //Handles staff login button click.
+    //Handles staff login
     @FXML
     private void handleStaffLogin() {
         String username = staffUsername.getText().trim();
@@ -73,21 +79,18 @@ public class LoginRegisterController implements Initializable {
         }
         try {
             Staff staffMember = Staff.login(username, password);
-            // Show an informational alert — staff dashboard is shown as info
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Staff Login Successful");
-            alert.setHeaderText("Welcome, " + staffMember.getUsername() + "!");
-            alert.setContentText("Role: " + staffMember.getRole() + "\nWorking Hours: " + staffMember.getWorkingHours());
-            alert.showAndWait();
 
-            loginStatusLabel.setText("Staff login successful: " + staffMember.getUsername());
-            loginStatusLabel.getStyleClass().setAll("label", "status-success");
+            // Navigate based on role
+            if (staffMember instanceof Admin) {
+                SceneNavigator.navigateToStaff("AdminDashboard.fxml", staffMember);
+            } else if (staffMember instanceof Receptionist) {
+                SceneNavigator.navigateToStaff("ReceptionistDashboard.fxml", staffMember);
+            }
         } catch (InvalidCredentialException e) {
             loginStatusLabel.setText(e.getMessage());
             loginStatusLabel.getStyleClass().setAll("label", "status-error");
         }
     }
-
     //Handles new guest registration.
     @FXML
     private void handleRegister() {
@@ -99,7 +102,6 @@ public class LoginRegisterController implements Initializable {
         String address = regAddress.getText().trim();
         String preferences = regPreferences.getText().trim();
 
-        // Basic empty-field validation
         if (username.isEmpty() || password.isEmpty() || dob == null || gender == null
                 || balanceStr.isEmpty() || address.isEmpty()) {
             registerStatusLabel.setText("Please fill in all required fields.");
@@ -122,7 +124,6 @@ public class LoginRegisterController implements Initializable {
         try {
             Guest newGuest = Guest.register(username, password, dob, gender, balance, address, preferences);
 
-            // Show success alert
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Registration Successful");
             alert.setHeaderText("Welcome, " + newGuest.getUsername() + "!");
@@ -132,21 +133,68 @@ public class LoginRegisterController implements Initializable {
             registerStatusLabel.setText("Registration successful! Switch to Login tab.");
             registerStatusLabel.getStyleClass().setAll("label", "status-success");
 
-            // Clear fields
-            regUsername.clear();
-            regPassword.clear();
-            regDob.setValue(null);
-            regGender.setValue(null);
-            regBalance.clear();
-            regAddress.clear();
-            regPreferences.clear();
-
-            // Switch to login tab
+            regUsername.clear(); regPassword.clear(); regDob.setValue(null);
+            regGender.setValue(null); regBalance.clear(); regAddress.clear(); regPreferences.clear();
             tabPane.getSelectionModel().select(0);
 
         } catch (WeakPwordException | InvalidDateException e) {
             registerStatusLabel.setText(e.getMessage());
             registerStatusLabel.getStyleClass().setAll("label", "status-error");
+        }
+    }
+
+    //Handles staff registration (references Admin.registerStaff() logic)
+    @FXML
+    private void handleStaffRegister() {
+        String username = staffRegUsername.getText().trim();
+        String password = staffRegPassword.getText();
+        LocalDate dob = staffRegDob.getValue();
+        Role role = staffRegRole.getValue();
+        String hoursStr = staffRegHours.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty() || dob == null || role == null || hoursStr.isEmpty()) {
+            staffRegStatusLabel.setText("Please fill in all fields.");
+            staffRegStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        int hours;
+        try {
+            hours = Integer.parseInt(hoursStr);
+            if (hours <= 0) {
+                staffRegStatusLabel.setText("Working hours must be positive.");
+                staffRegStatusLabel.getStyleClass().setAll("label", "status-error");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            staffRegStatusLabel.setText("Invalid working hours. Enter a number.");
+            staffRegStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        try {
+            // Validate using ValidationUtil (same as Admin.registerStaff)
+            ValidationUtil.validateUsername(username);
+            ValidationUtil.validateDateOfBirth(dob);
+            ValidationUtil.validatePassword(password);
+
+            if (role == Role.ADMIN) {
+                HotelDatabase.staff.add(new Admin(username, password, dob, hours));
+            } else {
+                HotelDatabase.staff.add(new Receptionist(username, password, dob, hours));
+            }
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Staff Registration Successful");
+            alert.setHeaderText(role + ": " + username + " registered!");
+            alert.setContentText("The staff member can now login.");
+            alert.showAndWait();
+            staffRegStatusLabel.setText("Staff registered successfully!");
+            staffRegStatusLabel.getStyleClass().setAll("label", "status-success");
+            staffRegUsername.clear(); staffRegPassword.clear();
+            staffRegDob.setValue(null); staffRegRole.setValue(null); staffRegHours.clear();
+            tabPane.getSelectionModel().select(0);
+
+        } catch (WeakPwordException | InvalidDateException e) {
+            staffRegStatusLabel.setText(e.getMessage());
+            staffRegStatusLabel.getStyleClass().setAll("label", "status-error");
         }
     }
 }
