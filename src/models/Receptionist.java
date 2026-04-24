@@ -7,6 +7,8 @@ import exceptions.InvalidCredentialException;
 import utils.ValidationUtil;
 import java.util.Scanner;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Receptionist extends Staff {
 
@@ -28,8 +30,22 @@ public class Receptionist extends Staff {
 
             System.out.println("Notice: Guest '" + reservation.getGuest().getUsername()
                     + "' is already checked in to Room #" + reservation.getRoom().getRoomNumber() + ".");
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate checkInDate = reservation.getCheckInDate();
+
+        if (today.isBefore(checkInDate)) {
+            System.out.println("Error: Cannot check in. Reservation starts on " + checkInDate
+                    + ". Today is " + today + ".");
+            return;
         }
 
+        if (today.isAfter(reservation.getCheckOutDate())) {
+            System.out.println("Error: Cannot check in. Reservation already expired on "
+                    + reservation.getCheckOutDate() + ".");
+            return;
+        }
 
         // Mark as checked in
         reservation.setCheckedIn(true);
@@ -56,16 +72,19 @@ public class Receptionist extends Staff {
         }
 
         if (reservation.isCheckedOut()) {
-
             System.out.println("Notice: Guest: " + reservation.getGuest().getUsername()
                     + " has already been checked out.");
+            return reservation.getInvoice();
+        }
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(reservation.getCheckInDate())) {
+            System.out.println("Error: Cannot check out. Reservation hasn't started yet (starts "
+                    + reservation.getCheckInDate() + ").");
             return null;
         }
-
         // Mark as checked out
         reservation.setCheckedOut(true);
-        // Auto-update status to COMPLETED on checkout
-        reservation.setReservationStatus(ReservationStatus.COMPLETED);
+        reservation.setReservationStatus(ReservationStatus.CONFIRMED);
         // Generate the invoice
         Invoice invoice = reservation.getInvoice();
         if (invoice == null) {
@@ -129,35 +148,56 @@ public class Receptionist extends Staff {
         System.out.print("\nEnter Guest Username: ");
         String username = sc.next();
 
-        Reservation found = null;
+        List<Reservation> guestReservations = new ArrayList<>();
         for (Reservation r : HotelDatabase.reservations) {
             if (r.getGuest().getUsername().equalsIgnoreCase(username)) {
-                found = r; break;
+                guestReservations.add(r);
             }
         }
 
-        if (found == null) {
-            System.out.println("Error: No reservation found");
+        if (guestReservations.isEmpty()) {
+            System.out.println("Error: No reservation found for '" + username + "'");
             return;
         }
 
+        System.out.println("\n--- Reservations for " + username + " ---");
+        for (int i = 0; i < guestReservations.size(); i++) {
+            Reservation res = guestReservations.get(i);
+            System.out.println((i+1) + ". Room #" + res.getRoom().getRoomNumber()
+                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                    + " | Status: " + res.getReservationStatus());
+        }
+
+        System.out.print("\nSelect reservation number to update: ");
+        int choice;
+        try {
+            choice = sc.nextInt();
+            if (choice < 1 || choice > guestReservations.size()) {
+                System.out.println("Invalid choice.");
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println("Invalid input.");
+            return;
+        }
+
+        Reservation found = guestReservations.get(choice - 1);
         System.out.println("Current: " + found.getReservationStatus());
         System.out.println("1.PENDING 2.CONFIRMED 3.CANCELLED 4.COMPLETED");
         System.out.print("Choice: ");
 
         try {
-            int choice = sc.nextInt();
-            if (choice < 1 || choice > 4) {
+            int statusChoice = sc.nextInt();
+            if (statusChoice < 1 || statusChoice > 4) {
                 System.out.println("Invalid choice (1-4 only)");
                 return;
             }
-            ReservationStatus status = ReservationStatus.values()[choice-1];
+            ReservationStatus status = ReservationStatus.values()[statusChoice-1];
             updateReservationStatus(found, status);
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
-
     // Process payment for a checkout invoice.
     public boolean processCheckoutPayment(Invoice invoice, double amountPaid) {
         if (invoice == null) {

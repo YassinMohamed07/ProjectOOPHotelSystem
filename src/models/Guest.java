@@ -154,6 +154,7 @@ public class Guest {
     }
 
 
+
     // SEARCH logic - finding available rooms based on criteria
     public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
                                                   Roomtypee type, double maxPrice)
@@ -211,6 +212,7 @@ public class Guest {
         }
         return true; // No conflicts were found
     }
+
 
 
     // Checkout - integration with Teammate5's Invoice system

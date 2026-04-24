@@ -61,7 +61,13 @@ public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     }
     @Override
     public String toString(){
+    if (amenities.isEmpty())
+    {
+         return"Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ "No Amenties in this room";
+    }
+
     return "Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ amenities;
+
     }
     public void addAmenities(){
     Scanner input=new Scanner(System.in);
