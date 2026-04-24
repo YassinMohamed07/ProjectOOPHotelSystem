@@ -111,7 +111,18 @@ public class Receptionist extends Staff {
         if (current == ReservationStatus.CANCELLED && newStatus != ReservationStatus.CANCELLED) {
             throw new InvalidCredentialException("Cannot change status of CANCELLED reservation");
         }
-
+        if (newStatus == ReservationStatus.COMPLETED) {
+            if (!reservation.isCheckedIn()) {
+                throw new InvalidCredentialException(
+                        "Cannot mark as COMPLETED. Guest was never checked in."
+                );
+            }
+            if (!reservation.isCheckedOut()) {
+                throw new InvalidCredentialException(
+                        "Cannot mark as COMPLETED. Guest was never checked out."
+                );
+            }
+        }
         reservation.setReservationStatus(newStatus);
         System.out.println("Updated: " + current + " → " + newStatus);
     }
