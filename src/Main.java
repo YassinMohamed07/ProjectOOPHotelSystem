@@ -8,6 +8,7 @@ import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import models.*;
 
@@ -21,13 +22,15 @@ import java.util.logging.ConsoleHandler;
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
-
-        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
-        Scene scene = new Scene(root);
+        StackPane rootpane = new StackPane();
+        Scene scene = new Scene(rootpane);
+        SceneNavigator.setRootPane(rootpane);
         Image icon = new Image("hotel.png");
+        primaryStage.setScene(scene);
         primaryStage.getIcons().add(icon);
         primaryStage.setTitle("Hotel Reservation System");
         primaryStage.setScene(scene);
+        SceneNavigator.navigateTo("LoginRegister.fxml");
         primaryStage.show();
     }
 
