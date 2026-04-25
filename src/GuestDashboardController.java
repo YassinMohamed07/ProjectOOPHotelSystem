@@ -39,11 +39,13 @@ public class GuestDashboardController implements Initializable, GuestAware {
         columnStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReservationStatus().toString()));
         columnPaid.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isPaid() ? "Yes" : "No"));
     }
+
     @Override
     public void setGuest(Guest guest) {
         this.currentGuest = guest;
         populateDashboard();
     }
+
     //Populates all dashboard fields with the current guest's data.
     private void populateDashboard() {
         if (currentGuest == null) return;
@@ -58,12 +60,20 @@ public class GuestDashboardController implements Initializable, GuestAware {
 
         refreshReservationsTable();
     }
+
     //Refreshes the reservations table with latest data.
     private void refreshReservationsTable() {
         List<Reservation> reservations = currentGuest.viewReservations();
         ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
         reservationsTable.setItems(observableReservations);
     }
+
+    //Navigate to Room Browsing screen.
+    @FXML
+    private void handleBrowseRooms() {
+        SceneNavigator.navigateTo("RoomBrowsing.fxml", currentGuest);
+    }
+
     //Logout and return to Log-in/Register screen.
     @FXML
     private void handleLogout() {

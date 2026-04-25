@@ -4,7 +4,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.layout.StackPane;
 import models.Guest;
 import models.Staff;
-
 import java.net.URL;
 
 //Utility class for navigating between screens using a shared StackPane root.
@@ -47,7 +46,6 @@ public class SceneNavigator {
                 alert.showAndWait();
                 return;
             }
-
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
             Parent view = loader.load();
             Object controller = loader.getController();
