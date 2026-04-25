@@ -135,30 +135,54 @@ public class Main extends Application {
                                 Reservation newRes = guest.makeReservation(selectedRoom, checkIn, checkOut);
                                 System.out.println("Room reserved successfully!");
 
+
                                 // 2. AMENITY SELECTION LOGIC
                                 System.out.print("\nWould you like to add extra amenities? (y/n): ");
                                 if (input.next().equalsIgnoreCase("y")) {
                                     boolean adding = true;
                                     while (adding) {
                                         System.out.println("\n--- Extra Amenities Menu ---");
-                                        for (int i = 0; i < HotelDatabase.allAmenities.size(); i++) {
-                                            Amenity a = HotelDatabase.allAmenities.get(i);
+
+                                        // Filter out amenities that the room already has
+                                        List<Amenity> availableExtras = new ArrayList<>();
+                                        for (Amenity a : HotelDatabase.allAmenities) {
+                                            if (!selectedRoom.getAmenities().contains(a) && a.getPrice() > 0) {
+                                                availableExtras.add(a);
+                                            }
+                                        }
+
+                                        if (availableExtras.isEmpty()) {
+                                            System.out.println("No extra amenities available for this room.");
+                                            break;
+                                        }
+
+                                        for (int i = 0; i < availableExtras.size(); i++) {
+                                            Amenity a = availableExtras.get(i);
                                             System.out.println((i + 1) + ". " + a.getName() + " ($" + a.getPrice() + "/night)");
                                         }
+
                                         System.out.print("Select amenity number (or 0 to finish): ");
                                         int amChoice = input.nextInt();
 
                                         if (amChoice == 0) {
                                             adding = false;
-                                        } else if (amChoice > 0 && amChoice <= HotelDatabase.allAmenities.size()) {
-                                            Amenity selected = HotelDatabase.allAmenities.get(amChoice - 1);
-                                            newRes.addChosenAmenity(selected); // Link to the reservation
-                                            System.out.println(">> " + selected.getName() + " added to your stay.");
+                                        } else if (amChoice > 0 && amChoice <= availableExtras.size()) {
+                                            Amenity selected = availableExtras.get(amChoice - 1);
+
+                                            // Prevent adding the same extra twice
+                                            if (newRes.getChosenAmenities().contains(selected)) {
+                                                System.out.println(">> You have already added " + selected.getName() + ".");
+                                            } else {
+                                                newRes.addChosenAmenity(selected);
+                                                System.out.println(">> " + selected.getName() + " added to your stay.");
+                                            }
                                         } else {
                                             System.out.println("Invalid choice.");
                                         }
                                     }
                                 }
+
+
 
                                 // 3. Generate the invoice immediately so the guest sees the total
                                 Invoice inv = new Invoice(newRes);

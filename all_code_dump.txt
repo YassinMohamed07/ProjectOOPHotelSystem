@@ -1,0 +1,2506 @@
+﻿import models.Guest;
+//Interface for controllers that need to receive the currently logged-in Guest.
+
+public interface GuestAware {
+    void setGuest(Guest guest);
+}
+import database.HotelDatabase;
+import exceptions.InvalidCredentialException;
+import exceptions.InvalidDateException;
+import exceptions.WeakPwordException;
+
+import models.*;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.logging.ConsoleHandler;
+
+public  class Main  {
+//    public void start(Stage primaryStage) throws Exception {
+//
+//        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
+//        Scene scene = new Scene(root);
+//        Image icon = new Image("hotel.png");
+//        primaryStage.getIcons().add(icon);
+//        primaryStage.setTitle("Hotel Reservation System");
+//        primaryStage.setScene(scene);
+//        primaryStage.show();
+//    }
+
+    public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
+        // 1. Boot up the database (This MUST be the first line of the whole project)
+        HotelDatabase.initialize();
+//        launch(args);
+       boolean exitt=false;
+        Scanner input = new Scanner(System.in);
+        System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
+        while (!exitt) {
+            System.out.println("\n1. Login as Guest");
+            System.out.println("2. Login as Staff");
+            System.out.println("3. Register New Guest");
+            System.out.println("4. Exit");
+            System.out.print("Select an option (1-4): ");
+            switch (getValidIntInput(input, 1, 4)) {
+                case 1:{
+                    boolean loggedIn = false; // Flag to track success
+                    Guest guest=null;
+                    while (!loggedIn) {
+                        System.out.println("Enter Username: ");
+                        String username = input.next();
+                        System.out.println("Enter Password: ");
+                        String password = input.next();
+                        try {
+                            // Attempt login
+                            guest=Guest.login(username, password);
+
+                            // If the line above doesn't throw an exception, login is successful
+                            loggedIn = true;
+
+                        } catch (InvalidCredentialException ex) {
+                            // If an exception is caught, the loop runs again
+                            System.out.println("An error occurred: " + ex.getMessage());
+                            System.out.println("Please try again.");
+                        }
+                    }
+                    boolean exitGuest=false;
+                    while(!exitGuest){
+                        System.out.println("\n--- Guest Menu ---");
+                        System.out.println("1. Search & Book a Room");
+                        System.out.println("2. View My Reservations");
+                        System.out.println("3. Cancel a Reservation");
+                        System.out.println("4. Checkout & Pay");
+                        System.out.println("5. Exit ");
+                        System.out.println("Select an option (1-5): ");
+                        switch (getValidIntInput(input, 1, 5)){
+                            case 1: {
+                                boolean searchSuccessful = false;
+                                List<Room> availableRooms = null;
+                                LocalDate checkIn = null;
+                                LocalDate checkOut = null;
+                                while (!searchSuccessful) {
+                                    try {
+                                        System.out.println("Enter wanted checkin date (e.g., 2026-04-26):");
+                                        String checkInStr = input.next();
+                                        checkIn = LocalDate.parse(checkInStr);
+                                        System.out.println("Enter wanted checkout date:");
+                                        String checkOutStr = input.next();
+                                        checkOut = LocalDate.parse(checkOutStr);
+
+                                    System.out.println("Enter Room type (SINGLE, DOUBLE, SUITE):");
+                                    String typeStr = input.next().toUpperCase();
+                                    Roomtypee type = Roomtypee.valueOf(typeStr);
+
+                                    System.out.println("Enter your maximum budget per one night:");
+                                    double maxprice = input.nextDouble();
+
+                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, type, maxprice);
+                                    searchSuccessful = true;
+
+                                } catch (DateTimeParseException e) {
+                                    System.out.println("Error: Invalid date format. Please use YYYY-MM-DD.");
+                                } catch (IllegalArgumentException e) {
+                                    System.out.println("Error: That room type does not exist.");
+                                } catch (InvalidDateException e) {
+                                    System.out.println("Error: " + e.getMessage());
+                                }
+                            }
+
+                            if (availableRooms == null || availableRooms.isEmpty()) {
+                                System.out.println("No rooms matched this description.");
+                                break;
+                            }
+
+                            System.out.println("\n--- Available Rooms found ---");
+                            for (int i = 0; i < availableRooms.size(); i++) {
+                                System.out.println(i + 1 + ". " + availableRooms.get(i));
+                            }
+                            System.out.print("\nWhich room do you want to book: ");
+                            int choice = input.nextInt();
+
+                            if (choice < 1 || choice > availableRooms.size()) {
+                                System.out.println("Invalid selection.");
+                                break;
+                            }
+                            Room selectedRoom = availableRooms.get(choice - 1);
+
+                            try {
+                                // 1. Create the reservation
+                                Reservation newRes = guest.makeReservation(selectedRoom, checkIn, checkOut);
+                                System.out.println("Room reserved successfully!");
+
+
+                                // 2. AMENITY SELECTION LOGIC
+                                System.out.print("\nWould you like to add extra amenities? (y/n): ");
+                                if (input.next().equalsIgnoreCase("y")) {
+                                    boolean adding = true;
+                                    while (adding) {
+                                        System.out.println("\n--- Extra Amenities Menu ---");
+
+                                        // Filter out amenities that the room already has
+                                        List<Amenity> availableExtras = new ArrayList<>();
+                                        for (Amenity a : HotelDatabase.allAmenities) {
+                                            if (!selectedRoom.getAmenities().contains(a) && a.getPrice() > 0) {
+                                                availableExtras.add(a);
+                                            }
+                                        }
+
+                                        if (availableExtras.isEmpty()) {
+                                            System.out.println("No extra amenities available for this room.");
+                                            break;
+                                        }
+
+                                        for (int i = 0; i < availableExtras.size(); i++) {
+                                            Amenity a = availableExtras.get(i);
+                                            System.out.println((i + 1) + ". " + a.getName() + " ($" + a.getPrice() + "/night)");
+                                        }
+
+                                        System.out.print("Select amenity number (or 0 to finish): ");
+                                        int amChoice = input.nextInt();
+
+                                        if (amChoice == 0) {
+                                            adding = false;
+                                        } else if (amChoice > 0 && amChoice <= availableExtras.size()) {
+                                            Amenity selected = availableExtras.get(amChoice - 1);
+
+                                            // Prevent adding the same extra twice
+                                            if (newRes.getChosenAmenities().contains(selected)) {
+                                                System.out.println(">> You have already added " + selected.getName() + ".");
+                                            } else {
+                                                newRes.addChosenAmenity(selected);
+                                                System.out.println(">> " + selected.getName() + " added to your stay.");
+                                            }
+                                        } else {
+                                            System.out.println("Invalid choice.");
+                                        }
+                                    }
+                                }
+
+
+
+                                // 3. Generate the invoice immediately so the guest sees the total
+                                Invoice inv = new Invoice(newRes);
+                                newRes.setInvoice(inv);
+                                System.out.println("\nBooking Process Complete!");
+                                System.out.println("Total Estimate (including extras & tax): $" + String.format("%.2f", inv.calculateTotal()));
+
+                            } catch (InvalidDateException e) {
+                                System.out.println("Error: " + e.getMessage());
+                            }
+                            break;
+                        }
+                                 case 2: {
+                                   List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                               if(myReservations.isEmpty()){
+                                 System.out.println("No reservations found.");
+                                 }
+                               for(int i=0;i<myReservations.size();i++){
+                                  System.out.println(i+1+" "+myReservations.get(i));
+                                  }
+
+                            break;
+                        }
+
+
+                        case 3: {
+
+                            List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                            if(myReservations.isEmpty()){
+                                System.out.println("No reservations found.");
+                                break;
+                            }
+                            for(int i=0;i<myReservations.size();i++){
+                                System.out.println(i+1+" "+myReservations.get(i));
+                            }
+
+                                System.out.println("Enter the number of reservation you want to cancel: ");
+                                 int choice = input.nextInt();
+                            if (choice < 1 || choice > myReservations.size()) {
+                                System.out.println("Invalid selection. Must be 1-" + myReservations.size());
+                                break;
+                            }
+                                 guest.cancelReservation(myReservations.get(--choice));
+
+                              break;                }
+                        case 4:{ List<Reservation> myReservations=guest.viewReservations();
+                            System.out.println("---My reservations---");
+                            if(myReservations.isEmpty()){
+                                System.out.println("No reservations found.");
+                                break;
+                            }
+                            for(int i=0;i<myReservations.size();i++){
+                                System.out.println(i+1+" "+myReservations.get(i));
+                            }
+
+                            System.out.println("Enter the number of reservation you want to pay for : ");
+int choice= input.nextInt();
+if (choice < 1 || choice > myReservations.size()) {
+    System.out.println("Invalid selection. Must be 1-" + myReservations.size());
+    break;
+                            }
+if(myReservations.get(choice-1).isPaid()){
+
+    System.out.println("This reservation is already paid");
+    System.out.println(myReservations.get(choice-1).getInvoice());
+    break;
+}
+try{System.out.println(guest.checkout(myReservations.get(--choice)));}
+catch(Exception e ){
+    System.out.println(e.getMessage());
+}
+
+      break; }
+
+
+                        case 5:{ System.out.println("Returning to main menu......");
+                            exitGuest=true; break;}
+
+                        default:{  System.out.println("Invalid input"); break;
+                        }
+
+                    }
+
+                }
+
+
+
+
+
+             break;   }
+
+                case 2: {
+                    boolean exitstaff = false;
+                    while (!exitstaff) {
+                        System.out.println("\n--- Staff Portal ---");
+                        System.out.println("1. Login as Admin ");
+                        System.out.println("2. Login as Receptionist ");
+                        System.out.println("3. Return to main menu");
+                        System.out.print("Select your testing role (1-3): ");
+
+                        int roleChoice =  getValidIntInput(input, 1, 3);
+
+                        // ADMIN
+                        switch(roleChoice){
+                    case 1:    { boolean adminRunning = false;
+                            Admin mainAdmin = null;
+                        String pass=null;
+                        String username=null;
+                            boolean loggedIn=false;
+                            while(!loggedIn) {
+                                System.out.println("Enter username: ");
+                                username = input.next();
+                                System.out.println("Enter password: ");
+                                 pass = input.next();
+                                try {
+                                    if (Staff.login(username, pass) instanceof Receptionist) {
+                                        System.out.println("You are not an admin");
+break;
+                          }
+                                    mainAdmin=(Admin)Staff.login(username,pass);
+loggedIn=true;
+adminRunning=true;
+System.out.println("Log in successful: "+mainAdmin.getUsername());
+                                } catch (InvalidCredentialException e) {
+                                    System.out.println(e.getMessage());
+                                    System.out.println("Try again");
+adminRunning=false;
+
+
+                                } catch (Exception e) {
+
+                                    System.out.println("You are not an admin");
+                                    break;
+                                }
+
+                            }
+
+
+
+                            while (adminRunning) {
+
+                                System.out.println("\n--- ADMIN DASHBOARD ---");
+                                System.out.println("1. View Data");
+                                System.out.println("2. Add Data");
+                                System.out.println("3. Update Data");
+                                System.out.println("4. Delete Data");
+                                System.out.println("5. Register new staff");
+                                System.out.println("6. Logout");
+                                System.out.print("Select an option (1-6): ");
+
+                                switch (getValidIntInput(input, 1, 6)) {
+                                    case 1:
+                                        mainAdmin.viewAll();
+                                        break;
+                                    case 2:
+                                        mainAdmin.add();
+                                        break;
+                                    case 3:
+                                        mainAdmin.update();
+                                        break;
+                                    case 4:
+                                        mainAdmin.delete();
+                                        break;
+                                    case 5:{
+                                        try {
+                                            mainAdmin.resgisterStaff();
+
+                                        } catch (InvalidDateException e) {
+                                            System.out.println(e.getMessage());
+                                        } catch (WeakPwordException e) {
+                                            System.out.println(e.getMessage());
+                                        } catch (Exception e) {
+                                            System.out.println(e.getMessage());
+                                        }
+
+
+
+
+
+                                 break;   }
+                                    case 6:
+                                        System.out.println("Logging Admin out...");
+                                        adminRunning = false;
+                                        break;
+                                    default:
+                                        System.out.println("Invalid choice.");
+                                        break;
+                                }
+                            }
+                   break;     } case 2: {
+                                boolean recRunning = false;
+                                boolean loggedIn = false;
+                                Receptionist frontDesk = null;
+                                while (!loggedIn) {
+                                    System.out.println("Enter username: ");
+                                    String username = input.next();
+                                    System.out.println("Enter password: ");
+                                    String pass = input.next();
+                                    try {
+                                        if (Staff.login(username, pass) instanceof Admin) {
+                                            System.out.println("You are not a receptionist.");
+                                            recRunning=false;
+                                            break;
+                                        }
+                                        frontDesk = (Receptionist) Staff.login(username, pass);
+                                        loggedIn = true;
+                                        recRunning=true;
+                                        System.out.println("Log in successful: "+frontDesk.getUsername());
+
+                                    }
+                                    catch (InvalidCredentialException e){
+                                        System.out.println(e.getMessage());
+                                        System.out.println("Try again");
+                                    }
+                                }
+
+
+
+                            while (recRunning) {
+                                System.out.println("\n--- FRONT DESK DASHBOARD ---");
+                                System.out.println("1. View All Guests");
+                                System.out.println("2. View All Rooms");
+                                System.out.println("3. View All Reservations");
+                                System.out.println("4. View All Invoices");
+                                System.out.println("5. Check-In a Guest");
+                                System.out.println("6. Check-Out a Guest & Process Payment");
+                                System.out.println("7. Update Reservation Status");
+                                System.out.println("8. Finalize Expired Reservations");
+                                System.out.println("9. Logout");
+                                System.out.print("Select an option (1-9): ");
+
+                                switch (getValidIntInput(input, 1, 9)) {
+                                    case 1:
+                                        frontDesk.viewAllGuests();
+                                        break;
+                                    case 2:
+                                        frontDesk.viewAllRooms();
+                                        break;
+                                    case 3:
+                                        frontDesk.viewAllReservations();
+                                        break;
+                                    case 4:
+                                        frontDesk.viewAllInvoices();
+                                        break;
+
+                                    // CHECK-IN LOGIC
+                                    case 5: {
+                                        System.out.print("\nEnter Guest Username to Check-In: ");
+                                        String searchName = input.next();
+
+                                        // Collect ALL active reservations for this guest
+                                        List<Reservation> guestReservations = new ArrayList<>();
+                                        for (Reservation r : HotelDatabase.reservations) {
+                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName) && !r.isCancelled()) {
+                                                guestReservations.add(r);
+                                            }
+                                        }
+
+                                        if (guestReservations.isEmpty()) {
+                                            System.out.println("Error: No active reservation found for username '" + searchName + "'.");
+                                            break;
+                                        }
+
+                                        // If only one reservation, use it directly
+                                        if (guestReservations.size() == 1) {
+                                            frontDesk.checkIn(guestReservations.get(0));
+                                            break;
+                                        }
+
+                                        // Multiple reservations â€” show numbered list
+                                        System.out.println("\n--- Active Reservations for " + searchName + " ---");
+                                        for (int i = 0; i < guestReservations.size(); i++) {
+                                            Reservation res = guestReservations.get(i);
+                                            System.out.println((i + 1) + ". Room #" + res.getRoom().getRoomNumber()
+                                                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                                                    + " | Status: " + res.getReservationStatus());
+                                        }
+                                        System.out.print("\nSelect reservation number to check in (0 to cancel): ");
+
+                                        int choice = getValidIntInput(input, 0, guestReservations.size());
+                                        if (choice == 0) {
+                                            System.out.println("Check-in cancelled.");
+                                            break;
+                                        }
+
+                                        frontDesk.checkIn(guestReservations.get(choice - 1));
+                                        break;
+                                    }
+
+                                    // CHECK-OUT LOGIC
+                                    case 6: {
+                                        System.out.print("\nEnter Guest Username to Check-Out: ");
+                                        String searchName = input.next();
+
+                                        // Collect ALL checked-in, not-checked-out reservations
+                                        List<Reservation> guestReservations = new ArrayList<>();
+                                        for (Reservation r : HotelDatabase.reservations) {
+                                            if (r.getGuest().getUsername().equalsIgnoreCase(searchName)
+                                                    && r.isCheckedIn()
+                                                    && !r.isPaid()) {
+                                                guestReservations.add(r);
+                                            }
+                                        }
+
+                                        if (guestReservations.isEmpty()) {
+                                            System.out.println("Error: Guest '" + searchName + "' is not currently checked in.");
+                                            break;
+                                        }
+
+                                        if (guestReservations.size() == 1) {
+                                            Invoice generatedInvoice = frontDesk.checkOut(guestReservations.get(0));
+                                            if (generatedInvoice != null) {
+                                                System.out.print("\nEnter amount paid by guest: $");
+                                                double payment = input.nextDouble();
+                                                frontDesk.processCheckoutPayment(generatedInvoice, payment);
+                                            }
+                                            break;
+                                        }
+
+                                        // Multiple reservations â€” show list
+                                        System.out.println("\n--- Checked-In Reservations for " + searchName + " ---");
+                                        for (int i = 0; i < guestReservations.size(); i++) {
+                                            Reservation res = guestReservations.get(i);
+                                            System.out.println((i + 1) + ". Room #" + res.getRoom().getRoomNumber()
+                                                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate());
+                                        }
+                                        System.out.print("\nSelect reservation number to check out (0 to cancel): ");
+
+                                        int choice = getValidIntInput(input, 0, guestReservations.size());
+                                        if (choice == 0) {
+                                            System.out.println("Check-out cancelled.");
+                                            break;
+                                        }
+
+                                        Invoice generatedInvoice = frontDesk.checkOut(guestReservations.get(choice - 1));
+                                        if (generatedInvoice != null) {
+                                            System.out.print("\nEnter amount paid by guest: $");
+                                            double payment = input.nextDouble();
+                                            frontDesk.processCheckoutPayment(generatedInvoice, payment);
+                                        }
+                                        break;
+                                    }
+                                    case 7:
+                                        frontDesk.manualStatusUpdateMenu();
+                                        break;
+                                    case 8:
+                                        frontDesk.finalizeCompletedReservations();
+                                        break;
+                                    case 9:
+                                        System.out.println("Logging Receptionist out...");
+                                        recRunning = false;
+                                        break;
+                                    default:
+                                        System.out.println("Invalid choice.");
+                                }
+                            }
+                     break;   } case 3: {
+                            System.out.println("Returning to main menu....");
+                            exitstaff=true; break;  }
+
+                            default: {
+                            System.out.println("Invalid role selected. Returning to main menu.");
+                        }
+                        break;
+
+                        }
+                  break;  }
+                 break; }
+
+
+                case 3: {
+           boolean regsucc=false;
+     while(!regsucc) {
+         System.out.println("Enter username (must be 3+ characters): ");
+         String username = input.next();
+         System.out.println("Enter password (Must contain at least 8 characters,one uppercase,one lowercase,one digit,one special char):  ");
+         String pass = input.next();
+         System.out.println("Enter Date of birth (eg. 2007-05-05): ");
+         String birth = input.next();
+         LocalDate dateOfBirth = LocalDate.parse(birth);
+         System.out.println("Enter your address: ");
+         String address = input.next();
+         System.out.println("Enter your balance: ");
+         double balance = input.nextDouble();
+         input.nextLine();
+         System.out.println("Enter your room prefrences: ");
+         String pref = input.nextLine();
+         System.out.println("Enter Gender (MAlE/FEMALE): ");
+         String gen= input.next().toUpperCase();
+         Gender gender=Gender.valueOf(gen);
+         try { Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
+          regsucc=true;
+          break;
+         }
+         catch (WeakPwordException e){
+             System.out.println(e.getMessage());
+         } catch (InvalidDateException e) {
+             System.out.println(e.getMessage());
+         }
+     }     break; }
+
+                case 4: {
+                    System.out.println("Shutting down the Hotel System. Goodbye!");
+                    exitt = true;
+                    break;
+                }
+
+                default:
+                    System.out.println("Invalid option. Please choose 1-4.");
+                    break;
+            }
+        }
+    }
+    private static int getValidIntInput(Scanner input, int min, int max) {
+        while (true) {
+            try {
+                int choice = input.nextInt();
+                if (choice >= min && choice <= max) return choice;
+                System.out.print("Invalid range. Try again: ");
+            } catch (Exception e) {
+                System.out.print("Invalid input. Enter number: ");
+                input.next(); // clear invalid input
+            }
+        }
+    }
+}
+import models.Staff;
+//Interface for controllers that need to receive the currently logged-in Staff member.
+
+public interface StaffAware {
+    void setStaff(Staff staff);
+}
+package database;
+
+import models.*;
+import java.util.ArrayList;
+import java.time.LocalDate;
+import exceptions.WeakPwordException;
+import exceptions.InvalidDateException;
+
+public class HotelDatabase {
+    public static ArrayList<Staff> staff= new ArrayList<>();
+    public static ArrayList<Guest> guests = new ArrayList<>();
+    public static ArrayList<Room> rooms = new ArrayList<>();
+    public static ArrayList<Reservation> reservations = new ArrayList<>();
+    public static ArrayList<Invoice> invoices = new ArrayList<>();
+    public static ArrayList<RoomType> roomTypes = new ArrayList<>();
+    public static ArrayList<Amenity> allAmenities = new ArrayList<>();
+   public static  ArrayList<Amenity> singleDefaults = new ArrayList<>();
+    public static ArrayList<Amenity> doubleDefaults= new ArrayList<>();
+   public static  ArrayList<Amenity> suiteDefaults = new ArrayList<>();
+    public static void initialize() throws InvalidDateException, WeakPwordException {
+        // --- 1. DEFINE STANDARD AMENITIES (Price = 0.0) ---
+        Amenity basicWifi = new Amenity("Basic Wi-Fi", 0.0);
+        Amenity smartTv = new Amenity("Standard Smart TV", 0.0);
+        Amenity ac = new Amenity("Air Conditioning & Heating", 0.0);
+        Amenity safe = new Amenity("In-Room Safe", 0.0);
+        Amenity housekeeping = new Amenity("Daily Housekeeping", 0.0);
+        Amenity workDesk = new Amenity("Work Desk & Chair", 0.0);
+        Amenity coffeeStation = new Amenity("Coffee & Tea Station", 0.0);
+        Amenity bathrobes = new Amenity("Premium Bathrobes", 0.0);
+        Amenity freeMiniBar = new Amenity("Complimentary Mini-Bar", 0.0);
+        Amenity loungeArea = new Amenity("Separate Lounge Area", 0.0);
+
+        // --- 2. DEFINE PREMIUM AMENITIES (Paid Extras) ---
+        Amenity fiberWifi = new Amenity("High-Speed Fiber Wi-Fi", 15.0);
+        Amenity lateCheckout = new Amenity("Late Checkout (2:00 PM)", 30.0);
+        Amenity spaAccess = new Amenity("Spa & Sauna Access", 75.0);
+        Amenity parking = new Amenity("Premium Valet Parking", 25.0);
+        Amenity sportsChannels = new Amenity("BeIN Sports Channel Access", 20.0);
+        Amenity streaming = new Amenity("Premium Streaming (HBO/Netflix)", 15.0);
+        Amenity massage = new Amenity("In-Room Massage Therapy", 120.0);
+        Amenity airportTransfer = new Amenity("Airport Limousine Transfer", 80.0);
+        Amenity champagne = new Amenity("Champagne & Fruit Platter", 50.0);
+        Amenity laundry = new Amenity("Same-Day Laundry Service", 40.0);
+
+        // Add ALL to the master database list so the system recognizes them
+        allAmenities.add(basicWifi);
+        allAmenities.add(smartTv);
+        allAmenities.add(ac);
+        allAmenities.add(safe);
+        allAmenities.add(housekeeping);
+        allAmenities.add(workDesk);
+        allAmenities.add(coffeeStation);
+        allAmenities.add(bathrobes);
+        allAmenities.add(freeMiniBar);
+        allAmenities.add(loungeArea);
+        allAmenities.add(fiberWifi);
+        allAmenities.add(lateCheckout);
+        allAmenities.add(spaAccess);
+        allAmenities.add(parking);
+        allAmenities.add(sportsChannels);
+        allAmenities.add(streaming);
+        allAmenities.add(massage);
+        allAmenities.add(airportTransfer);
+        allAmenities.add(champagne);
+        allAmenities.add(laundry);
+
+        // --- 3. BUILD DEFAULT LISTS FOR ROOM TYPES ---
+
+        // Single Room Defaults (Base + Desk)
+
+        singleDefaults.add(basicWifi);
+        singleDefaults.add(smartTv);
+        singleDefaults.add(ac);
+        singleDefaults.add(safe);
+        singleDefaults.add(housekeeping);
+        singleDefaults.add(workDesk);
+
+        // Double Room Defaults (Inherits Single, adds Coffee Station)
+        doubleDefaults = new ArrayList<>(singleDefaults);
+        doubleDefaults.add(coffeeStation);
+
+        // Suite Defaults (Inherits Double, adds Bathrobes, Free Minibar, Lounge)
+         suiteDefaults= new ArrayList<>(doubleDefaults);
+        suiteDefaults.add(bathrobes);
+        suiteDefaults.add(freeMiniBar);
+        suiteDefaults.add(loungeArea);
+
+        // --- 4. CREATE DATABASE ENTITIES ---
+
+        // Guests
+        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,2,"zahra2 el maadi","A room with strong wifi"));
+        guests.add(new Guest("Abdullah","Abdalaa.2007",LocalDate.of(2007,3,4),Gender.MALE,500,"Madinaty","A suite room with a mini bar"));
+        guests.add(new Guest("Ali","Aliatef.2007",LocalDate.of(2007,10,10),Gender.MALE,200000,"Mokatam","A double room with big bed"));
+
+        // Staff
+        staff.add(new Admin("Seif","Seif.2007",LocalDate.of(2007,10,14),9));
+        staff.add(new Receptionist("Yassin","Yassin.2007",LocalDate.of(2007,10,10),9));
+        staff.add(new Admin("Mohamed","Moh.2007",LocalDate.of(2007,11,11),9));
+
+        // Room Types
+        roomTypes.add(new RoomType("Single", 2000));
+        roomTypes.add(new RoomType("Double", 3500));
+        roomTypes.add(new RoomType("Suite", 4500));
+
+        // Rooms (Injecting the specific default amenity lists here)
+        rooms.add(new Room(202, roomTypes.get(0)));
+        rooms.add(new Room(102, roomTypes.get(1)));
+        rooms.add(new Room(115, roomTypes.get(2)));
+
+        // Reservations
+        reservations.add(new Reservation(guests.get(0), rooms.get(0), LocalDate.of(2026,6,15), LocalDate.of(2026,6,17)));
+        reservations.add(new Reservation(guests.get(1), rooms.get(1), LocalDate.of(2026,4,25), LocalDate.of(2026,4,27)));
+
+        // Invoices
+        invoices.add(new Invoice(reservations.get(0)));
+        invoices.add(new Invoice(reservations.get(1)));
+        reservations.get(0).setInvoice(invoices.get(0));
+        reservations.get(1).setInvoice(invoices.get(1));
+    }
+}
+package exceptions;
+
+public class InvalidCredentialException extends Exception {
+    public InvalidCredentialException(String message) {
+        super(message);//we pass the message to java's built_in Exception class (the super class)
+
+    }
+}
+package exceptions;
+
+public class InvalidDateException extends Exception {
+    public InvalidDateException(String message) {
+        super(message);
+    }
+}
+
+package exceptions;
+
+
+public class WeakPwordException extends Exception {
+    public WeakPwordException(String message) {
+        super(message);
+    }
+}
+
+
+package interfaces;
+
+public interface Manageable {
+    void add();
+    void update();
+    void delete();
+    void viewAll();
+}
+package interfaces;
+
+public interface Payable {
+    double calculateTotal();
+    boolean processPayment(double amountPaid);
+}
+package models;
+
+import database.HotelDatabase;
+import exceptions.InvalidCredentialException;
+import exceptions.InvalidDateException;
+import exceptions.WeakPwordException;
+import interfaces.Manageable;
+import utils.ValidationUtil;
+
+import java.time.LocalDate;
+import java.util.Scanner;
+
+public class Admin extends Staff implements Manageable {
+    public Admin(String username, String password, LocalDate dateOfBirth, int workingHours) throws WeakPwordException, InvalidDateException {
+        ValidationUtil.validatePassword(password);
+        ValidationUtil.validateDateOfBirth(dateOfBirth);
+        ValidationUtil.validateUsername(username);
+        super(username, password, dateOfBirth, Role.ADMIN, workingHours);
+    }
+
+    @Override
+    public void add() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- What would you like to ADD? ---");
+        System.out.println("1. New Room");
+        System.out.println("2. New Amenity");
+        System.out.print("Select an option (1-2): ");
+        int choice = sc.nextInt();
+
+        switch (choice) {
+            case 1: addRoom(); break;
+            case 2: addAmenity(); break;
+            default: System.out.println("Invalid choice. Returning to menu.");
+        }
+    }
+
+    @Override
+    public void update() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- What would you like to UPDATE? ---");
+        System.out.println("1. Update a Room");
+        System.out.println("2. Update a Room Type");
+        System.out.println("3. Update an Amenity");
+        System.out.print("Select an option (1-3): ");
+        int choice = sc.nextInt();
+
+        switch (choice) {
+            case 1: updateRoom(); break;
+            case 2: updateRoomType(); break;
+            case 3: updateAmenity(); break;
+            default: System.out.println("Invalid choice. Returning to menu.");
+        }
+    }
+
+    @Override
+    public void delete() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- What would you like to DELETE? ---");
+        System.out.println("1. Delete a Room");
+        System.out.println("2. Delete a Room Type");
+        System.out.println("3. Delete an Amenity");
+        System.out.print("Select an option (1-3): ");
+        int choice = sc.nextInt();
+
+        switch (choice) {
+            case 1: deleteRoom(); break;
+            case 2: deleteRoomType(); break;
+            case 3: deleteAmenity(); break;
+            default: System.out.println("Invalid choice. Returning to menu.");
+        }
+    }
+
+    @Override
+    public void viewAll() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- What would you like to VIEW? ---");
+        System.out.println("1. View All Rooms");
+        System.out.println("2. View All Room Types");
+        System.out.println("3. View All Amenities");
+        System.out.println("4. View All Guests");
+        System.out.print("Select an option (1-4): ");
+        int choice = sc.nextInt();
+
+        switch (choice) {
+            case 1: super.viewAllRooms(); break;
+            case 2: viewAllRoomTypes(); break;
+            case 3: viewAllAmenities(); break;
+            case 4: super.viewAllGuests(); break;
+            default: System.out.println("Invalid choice. Returning to menu.");
+        }
+    }
+
+    private void addRoom() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Add New Room ---");
+        System.out.print("Enter Room Number: ");
+        int roomNum = scanner.nextInt();
+
+        // Validation Check: Does this room already exist?
+        for (Room r : HotelDatabase.rooms) {
+            if (r.getRoomNumber() == roomNum) {
+                System.out.println("Error: Room #" + roomNum + " already exists in the system! Creation failed.");
+                return;
+            }
+        }
+
+        // Prevent adding a room if no Room Types exist
+        if (HotelDatabase.roomTypes.isEmpty()) {
+            System.out.println("Error: No room types exist. Please create a Room Type first.");
+            return;
+        }
+
+        // Let the Admin choose the Room Type dynamically
+        System.out.println("Select a Room Type:");
+        for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
+            System.out.println((i + 1) + ". " + HotelDatabase.roomTypes.get(i).getTypeName() + " ($" + HotelDatabase.roomTypes.get(i).getBasePrice() + ")");
+        }
+        System.out.print("Choice: ");
+        int typeChoice = scanner.nextInt();
+
+        // Safe array access
+        if (typeChoice > 0 && typeChoice <= HotelDatabase.roomTypes.size()) {
+            RoomType selectedType = HotelDatabase.roomTypes.get(typeChoice - 1);
+            Room newRoom = new Room(roomNum, selectedType);
+
+            HotelDatabase.rooms.add(newRoom);
+            System.out.println("Success: Room " + roomNum + " added to the database as a " + selectedType.getTypeName() + ".");
+        } else {
+            System.out.println("Error: Invalid room type selection. Room creation failed.");
+        }
+    }
+
+    // ADD ROOM TYPE
+    private void addRoomType() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Add New Room Type ---");
+        System.out.print("Enter Type Name (e.g., Penthouse): ");
+        String name = scanner.next();
+
+        // Prevent duplicate Room Types (ignoring uppercase/lowercase)
+        for (RoomType rt : HotelDatabase.roomTypes) {
+            if (rt.getTypeName().equalsIgnoreCase(name)) {
+                System.out.println("Error: Room Type '" + name + "' already exists in the system!");
+                return; // Early exit
+            }
+        }
+
+        System.out.print("Enter Base Price per Night: $");
+        double price = scanner.nextDouble();
+
+        // Prevent negative prices
+        if (price < 0) {
+            System.out.println("Error: Price cannot be negative. Creation failed.");
+            return;
+        }
+
+        RoomType newType = new RoomType(name, price);
+        HotelDatabase.roomTypes.add(newType);
+        System.out.println("Success: Room Type '" + name + "' created successfully!");
+    }
+    private void addAmenityToAROOM(int number){
+
+       Room selectedroom;
+       for(int i=0;i<HotelDatabase.rooms.size();i++){
+           if(HotelDatabase.rooms.get(i).getRoomNumber()==number){
+               selectedroom=HotelDatabase.rooms.get(i);
+               selectedroom.addAmenities();
+
+               return;
+           }
+
+
+       }
+
+
+
+
+    }
+    // ADD AMENITY
+    private void addAmenity() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Add New Amenity ---");
+        System.out.print("Enter Amenity Name (e.g., Spa): ");
+        String name = scanner.nextLine();
+
+        // Prevent duplicate Amenities
+        for (Amenity a : HotelDatabase.allAmenities) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                System.out.println("Error: Amenity '" + name + "' already exists in the system!");
+                return; // Early exit
+            }
+        }
+
+        System.out.print("Enter Amenity Price: $");
+        double price = scanner.nextDouble();
+scanner.nextLine();
+        // Prevent negative prices
+        if (price < 0) {
+            System.out.println("Error: Price cannot be negative. Creation failed.");
+            return;
+        }
+
+        Amenity newAmenity = new Amenity(name, price);
+        HotelDatabase.allAmenities.add(newAmenity);
+        System.out.println("Success: Amenity '" + name + "' added to the system!");
+    }
+
+    // UPDATE ROOM
+    private void updateRoom() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- Update Room  ---");
+        System.out.print("Enter Room Number to update: ");
+        int num = sc.nextInt();
+System.out.println("1. Update Room type");
+System.out.println("2. Add an amenity");
+System.out.println("Select an option (1-2): ");
+switch(sc.nextInt()) {
+
+    case 1: {
+            // Find the room
+            Room roomToUpdate = null;
+            for (Room r : HotelDatabase.rooms) {
+                if (r.getRoomNumber() == num) {
+                    roomToUpdate = r;
+                    break;
+                }
+            }
+
+            if (roomToUpdate == null) {
+                System.out.println("Error: Room #" + num + " not found in the system.");
+                return;
+            }
+
+            // State Visibility
+            System.out.println("Room found! Current Type: " + roomToUpdate.getType().getTypeName());
+
+            // Dynamic Menu for new types
+            System.out.println("Select a new Room Type:");
+            for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
+                System.out.println((i + 1) + ". " + HotelDatabase.roomTypes.get(i).getTypeName());
+            }
+            System.out.print("Choice: ");
+            int choice = sc.nextInt();
+
+            // Safe Array Access & Redundancy Check
+            if (choice > 0 && choice <= HotelDatabase.roomTypes.size()) {
+                RoomType newType = HotelDatabase.roomTypes.get(choice - 1);
+
+                if (roomToUpdate.getType() == newType) {
+                    System.out.println("Notice: Room #" + num + " is already a " + newType.getTypeName() + ". No changes made.");
+                } else {
+                    roomToUpdate.setType(newType);
+                    System.out.println("Success: Room #" + num + " updated to " + newType.getTypeName() + ".");
+                }
+            } else {
+                System.out.println("Error: Invalid selection. Update cancelled.");
+            }  break; }
+    case 2: {  addAmenityToAROOM(num); break;  }
+
+    default :{   System.out.println("Invalid choice.");
+        System.out.println("Returning to main menu....");
+        }
+    }}
+
+    // UPDATE ROOM TYPE
+    private void updateRoomType() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- Update Room Type Price ---");
+        System.out.print("Enter the Name of the Room Type to update (e.g., Suite): ");
+        String name = sc.next();
+
+        // Find the Room Type (Case Insensitive)
+        RoomType typeToUpdate = null;
+        for (RoomType rt : HotelDatabase.roomTypes) {
+            if (rt.getTypeName().equalsIgnoreCase(name)) {
+                typeToUpdate = rt;
+                break;
+            }
+        }
+
+        if (typeToUpdate == null) {
+            System.out.println("Error: Room Type '" + name + "' not found.");
+            return;
+        }
+
+        // Show current state and ask for update
+        System.out.println("Found '" + typeToUpdate.getTypeName() + "'. Current Price: $" + typeToUpdate.getBasePrice());
+        System.out.print("Enter NEW Base Price: $");
+        double newPrice = sc.nextDouble();
+
+        if (newPrice < 0) {
+            System.out.println("Error: Price cannot be negative. Update cancelled.");
+        } else if (newPrice == typeToUpdate.getBasePrice()) {
+            System.out.println("Notice: Price is exactly the same. No changes made.");
+        } else {
+            typeToUpdate.setBasePrice(newPrice);
+            System.out.println("Success: '" + typeToUpdate.getTypeName() + "' price updated to $" + newPrice);
+        }
+    }
+
+    // UPDATE AMENITY
+    private void updateAmenity() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n--- Update Amenity Price ---");
+        System.out.print("Enter the Name of the Amenity to update: ");
+        String name = sc.next();
+
+        // Find the Amenity
+        Amenity amenityToUpdate = null;
+        for (Amenity a : HotelDatabase.allAmenities) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                amenityToUpdate = a;
+                break;
+            }
+        }
+
+        if (amenityToUpdate == null) {
+            System.out.println("Error: Amenity '" + name + "' not found.");
+            return;
+        }
+
+        // Show current state and ask for update
+        System.out.println("Found '" + amenityToUpdate.getName() + "'. Current Price: $" + amenityToUpdate.getPrice());
+        System.out.print("Enter NEW Price: $");
+        double newPrice = sc.nextDouble();
+
+        if (newPrice < 0) {
+            System.out.println("Error: Price cannot be negative. Update cancelled.");
+        } else {
+            amenityToUpdate.setPrice(newPrice);
+            System.out.println("Success: '" + amenityToUpdate.getName() + "' price updated to $" + newPrice);
+        }
+    }
+
+    // DELETE ROOM
+    private void deleteRoom() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Delete Room ---");
+        System.out.print("Enter Room Number to remove: ");
+        int roomNum = scanner.nextInt();
+
+        // Find the room
+        Room roomToRemove = null;
+        for (Room r : HotelDatabase.rooms) {
+            if (r.getRoomNumber() == roomNum) {
+                roomToRemove = r;
+                break;
+            }
+        }
+
+        // Safely remove it
+        if (roomToRemove != null) {
+            HotelDatabase.rooms.remove(roomToRemove);
+            System.out.println("Success: Room #" + roomNum + " has been permanently deleted.");
+        } else {
+            System.out.println("Error: Room #" + roomNum + " not found.");
+        }
+    }
+
+    // DELETE ROOM TYPE
+    private void deleteRoomType() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Delete Room Type ---");
+        System.out.print("Enter the Name of the Room Type to delete (e.g., Suite): ");
+        String name = scanner.next();
+
+        // Find the Room Type
+        RoomType typeToRemove = null;
+        for (RoomType rt : HotelDatabase.roomTypes) {
+            if (rt.getTypeName().equalsIgnoreCase(name)) {
+                typeToRemove = rt;
+                break;
+            }
+        }
+
+        if (typeToRemove == null) {
+            System.out.println("Error: Room Type '" + name + "' not found.");
+            return;
+        }
+
+        //
+        // We cannot delete a Room Type if a Room is currently using it
+        boolean isUsed = false;
+        for (Room r : HotelDatabase.rooms) {
+            if (r.getType() == typeToRemove) {
+                isUsed = true;
+                break;
+            }
+        }
+
+        if (isUsed) {
+            System.out.println("CRITICAL ERROR: Cannot delete '" + typeToRemove.getTypeName() + "'.");
+            System.out.println("There are currently rooms using this type. You must update those rooms to a different type first!");
+        } else {
+            HotelDatabase.roomTypes.remove(typeToRemove);
+            System.out.println("Success: Room Type '" + typeToRemove.getTypeName() + "' has been deleted.");
+        }
+    }
+
+    // DELETE AMENITY
+    private void deleteAmenity() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n--- Delete Amenity ---");
+        System.out.print("Enter the Name of the Amenity to delete: ");
+        String name = scanner.next();
+
+        // Find the Amenity in the master list
+        Amenity amenityToRemove = null;
+        for (Amenity a : HotelDatabase.allAmenities) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                amenityToRemove = a;
+                break;
+            }
+        }
+
+        // Process the Deletion
+        if (amenityToRemove != null) {
+            // Step A: Remove from the master database
+            HotelDatabase.allAmenities.remove(amenityToRemove);
+
+            // (Remove from all rooms)
+            int affectedRooms = 0;
+            for (Room r : HotelDatabase.rooms) {
+                // If the room has this amenity, remove it!
+                if (r.getAmenities().contains(amenityToRemove)) {
+                    r.getAmenities().remove(amenityToRemove);
+                    affectedRooms++;
+                }
+            }
+
+            System.out.println("Success: Amenity '" + amenityToRemove.getName() + "' has been permanently deleted.");
+            if (affectedRooms > 0) {
+                System.out.println("Notice: This amenity was automatically removed from " + affectedRooms + " room(s) to prevent ghost billing.");
+            }
+
+        } else {
+            System.out.println("Error: Amenity '" + name + "' not found.");
+        }
+    }
+
+    // VIEW METHODS
+    private void viewAllRoomTypes() {
+        System.out.println("\n--- All Room Types ---");
+        if (HotelDatabase.roomTypes.isEmpty()) {
+            System.out.println("No room types in the system.");
+            return;
+        }
+        for (RoomType rt : HotelDatabase.roomTypes) {
+            System.out.println("- " + rt.getTypeName() + " (Base Price: $" + rt.getBasePrice() + ")");
+        }
+    }
+
+    private void viewAllAmenities() {
+        System.out.println("\n--- All System Amenities ---");
+        if (HotelDatabase.allAmenities.isEmpty()) {
+            System.out.println("No amenities in the system.");
+            return;
+        }
+for(int i=0;i<HotelDatabase.allAmenities.size();i++){
+
+    System.out.println("- " + HotelDatabase.allAmenities.get(i).getName() + " ($" + HotelDatabase.allAmenities.get(i).getPrice() + ")");
+}
+    }
+public  void resgisterStaff() throws InvalidDateException ,WeakPwordException {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Enter username (must be at least 3 characters): ");
+    String username = input.next();
+    System.out.println("Enter Password (must be at least 8 characters,contains at least 1 uppercase,1 lowercase, 1 digit , 1 special char): ");
+    String pass = input.next();
+    System.out.println("Enter date of birth (eg. 2007-10-14): ");
+    String d = input.next();
+    LocalDate dateofBirth = LocalDate.parse(d);
+    ValidationUtil.validateUsername(username);
+    ValidationUtil.validateDateOfBirth(dateofBirth);
+    ValidationUtil.validatePassword(pass);
+    System.out.println("Enter Role (ADMIN/RECEPTIONIST): ");
+    String r = input.next().toUpperCase();
+    Role role = Role.valueOf(r);
+    System.out.println("Enter number of working hours: ");
+   int hours = input.nextInt();
+if(role.equals(Role.ADMIN)){
+    HotelDatabase.staff.add(new Admin(username,pass,dateofBirth,hours));
+    System.out.println("Admin: "+username+" is added successfully to hotel system");
+    return;
+}
+if(role.equals(Role.RECEPTIONIST)){
+    HotelDatabase.staff.add(new Receptionist(username,pass,dateofBirth,hours));
+    System.out.println("Receptionist: "+username+" is added successfully to hotel system");
+    return;
+}
+ System.out.println("Unable to register new staff");
+return;
+
+
+}
+
+
+}
+package models;
+
+import database.HotelDatabase;
+
+public class Amenity {
+    private final String name;
+    private double price; // dummy field added (for testing)
+
+    public Amenity(String name) {
+
+        this.name = name.toUpperCase();
+        this.price = 50.0; // default dummy price
+    }
+
+    // Constructor with price dummy (for testing)
+    public Amenity(String name, double price) {
+
+        this.name = name;
+        this.price = price;
+    }
+
+    public void setPrice(double price) { this.price = price; }
+
+    public String getName() {
+        return name;
+    }
+
+    // Dummy returns amenity price for Invoice calculation (for testing)
+    public double getPrice() {
+        return price;
+    }
+    @Override
+    public String toString(){
+        return " name: "+name+" its price: "+price;
+
+    }
+}
+package models;
+public enum Gender { MALE, FEMALE }
+package models;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+import exceptions.*;
+import utils.ValidationUtil;
+import database.HotelDatabase;
+
+public class Guest {
+    private String username;
+    private String password;
+    private LocalDate dateOfBirth;
+    private Gender gender;
+    private double balance;
+    private String address;
+    private String roomPreferences;
+
+
+    public  Guest(String username, String password, LocalDate dateOfBirth, Gender gender, double balance, String address, String roomPreferences)
+        throws WeakPwordException, InvalidDateException{
+
+        ValidationUtil.validatePassword(password);
+        ValidationUtil.validateDateOfBirth(dateOfBirth);
+        ValidationUtil.validateUsername(username);
+
+        this.username = username;
+        this.password = password;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.balance = balance;
+        this.address = address;
+        this.roomPreferences = roomPreferences;
+
+        }
+    public String getUsername() { return username; }
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public Gender getGender() { return gender; }
+    public double getBalance() { return balance; }
+    public String getAddress() { return address; }
+    public String getRoomPreferences() { return roomPreferences; }
+    public void setAddress(String address) { this.address = address; }
+    public void setRoomPreferences(String prefs) { this.roomPreferences = prefs; }
+    public void setBalance(double balance) { this.balance = balance; }
+
+    public boolean verifyPassword(String input) {
+        return this.password.equals(input);
+
+    }
+    public int getAge() {
+        // Period method is a method that calculates time between two dates
+        return Period.between(dateOfBirth, LocalDate.now()).getYears();
+    }
+
+    @Override
+    public String toString() {
+        return "Guest[" + username + ", " + gender + ", Age:" + getAge() + ", Balance:$" + balance + "]";
+    }
+    public static Guest register(String username, String password, LocalDate dateOfBirth,
+                                 Gender gender, double balance, String address,
+                                 String roomPreferences)
+            throws WeakPwordException, InvalidDateException {
+
+        //1. Create new guest and the constructor handles validation
+        Guest newGuest = new Guest(username, password, dateOfBirth, gender,
+                (double)  balance, address, roomPreferences);
+
+        //2. Add to database; HotelDatabase is Teammate 2's class
+        if (HotelDatabase.guests != null) {
+            HotelDatabase.guests.add(newGuest);
+            System.out.println("Registration successful: " + username);
+        }
+
+        return newGuest;
+    }public static Guest login(String username, String password)
+            throws InvalidCredentialException {
+
+         //Check if database is empty
+        if (HotelDatabase.guests == null || HotelDatabase.guests.isEmpty()) {
+            throw new InvalidCredentialException("No users in system");
+        }
+
+        // Search through all guests using linear search
+        for (Guest g : HotelDatabase.guests) {
+            if (g.getUsername().equals(username)) {
+                if (g.verifyPassword(password)) {
+                    System.out.println("Login successful: " + username);
+                    return g; // Return the found guest object
+                } else {
+                    throw new InvalidCredentialException("Wrong password");
+                }
+            }
+        }
+
+        // If loop finishes without finding username
+        throw new InvalidCredentialException("User '" + username + "' not found");
+    }
+
+
+
+
+
+    //Guest must be able to make reservations
+
+    public Reservation makeReservation(Room room, LocalDate checkIn, LocalDate checkOut)
+            throws InvalidDateException {
+        // Validation
+        if (room == null || checkIn == null || checkOut == null) {
+            throw new InvalidDateException("Room and dates required");
+        }
+        if (checkIn.isAfter(checkOut)) {
+            throw new InvalidDateException("Check-in must be before check-out");
+        }
+
+        Reservation newRes = new Reservation(this, room, checkIn, checkOut);
+        HotelDatabase.reservations.add(newRes);
+        System.out.println("Reservation created successfully for room " + room.getRoomNumber());
+        return newRes;
+    }
+
+
+     //Guest must be able to view their reservations
+
+    public java.util.List<Reservation> viewReservations() {
+        List<Reservation> myReservations = new ArrayList<>();
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getGuest().equals(this)) {
+                myReservations.add(res);
+            }
+        }
+        return myReservations;
+    }
+
+
+    // Guest must be able to cancel reservations
+
+    public void cancelReservation(Reservation reservation)
+            throws InvalidCredentialException {
+        if (reservation == null) {
+            throw new InvalidCredentialException("Reservation not found");
+        }
+        if (!reservation.getGuest().equals(this)) {
+            throw new InvalidCredentialException("Not your reservation");
+        }
+        try{
+        reservation.cancelReservation();
+        System.out.println("Reservation cancelled successfully");}
+        catch (InvalidDateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+
+
+    // SEARCH logic - finding available rooms based on criteria
+    public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
+                                                  Roomtypee type, double maxPrice)
+            throws InvalidDateException {
+
+        // Validate dates
+        if (checkIn == null || checkOut == null) {
+            throw new InvalidDateException("Dates required");
+        }
+        if (checkIn.isAfter(checkOut)) {
+            throw new InvalidDateException("Check-in must be before check-out");
+        }
+        if (checkIn.isBefore(LocalDate.now())) {
+            throw new InvalidDateException("Cannot book in the past");
+        }
+
+        List<Room> available = new ArrayList<>();
+
+        // Check each room in database
+        for (Room room : HotelDatabase.rooms) {
+            // Filtering by type
+            if (type != null && !room.getType().getRoomType().equals(type)) {
+                continue; // Skip!!!
+            }
+
+            // Filter by price
+            if (maxPrice > 0 && room.totalRoomPricePerOneNight() > maxPrice) {
+                continue;
+            }
+
+            // Imp.: Check if room is available for these dates
+            if (isRoomAvailable(room, checkIn, checkOut)) {
+                available.add(room);
+            }
+        }
+
+        return available;
+    }
+
+    // helper method; Check if specific room is free for date range
+    private static boolean isRoomAvailable(Room room, LocalDate checkIn, LocalDate checkOut) {
+        // Check against all reservations (Teammate 4 creates Reservation class)
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getRoom().equals(room) && !res.isCancelled()) {
+                // DATE OVERLAP LOGIC
+                // Two ranges overlap if: (StartA <= EndB) AND (EndA >= StartB)
+                LocalDate existingCheckIn = res.getCheckInDate();
+                LocalDate existingCheckOut = res.getCheckOutDate();
+
+                boolean overlaps = !(existingCheckOut.isBefore(checkIn) ||
+                        existingCheckIn.isAfter(checkOut));
+
+                if (overlaps) return false; // Room is occupied
+            }
+        }
+        return true; // No conflicts were found
+    }
+
+
+
+    // Checkout - integration with Teammate5's Invoice system
+    public Invoice checkout(Reservation reservation) throws Exception ,InvalidCredentialException{
+        System.out.println("Choose a payment method(CASH,ONLINE,CREDIT_CARD): " );
+        Scanner input=new Scanner(System.in);
+String method=input.next().toUpperCase();
+
+        if (!reservation.getGuest().equals(this)) {
+            throw new InvalidCredentialException("This is not your reservation");
+        }
+
+            // Create invoice Teammate5 implements the invoice constructor
+            Invoice invoice = new Invoice(reservation);
+            reservation.setInvoice(invoice);
+            // Payable interface methods Mohamed created that interface
+            double total = invoice.calculateTotal();
+        PaymentMethod methodd=PaymentMethod.valueOf(method);
+        reservation.getInvoice().setPaymentmethod(methodd);
+            // Check the balance
+            if (this.balance < total) {
+                throw new InvalidCredentialException(
+                        "Insufficient funds. Need: $" + total + ", Have: $" + balance
+                );
+            }
+
+            // Process payment
+            boolean success = invoice.processPayment(total);
+            if (success) {
+                this.balance -= total;
+                System.out.println("Payment successful! Remaining balance: $" + this.balance);
+                return invoice;
+            } else {
+                throw new InvalidCredentialException("Payment failed");
+            }
+
+
+
+    }}
+
+package models;
+
+import database.HotelDatabase;
+import interfaces.Payable;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+
+public class Invoice implements Payable {
+
+        private Reservation reservation;
+        private LocalDate checkInDate;
+        private LocalDate checkOutDate;
+        private PaymentMethod paymentmethod = PaymentMethod.CASH;
+        private final LocalDate transactionDate = LocalDate.now();
+
+        // Move these declarations here, but DON'T initialize them yet
+        private long numberOfNights;
+        private double roomPricePerOneNight;
+
+        public Invoice(Reservation reservation) {
+            if (reservation == null) {
+                throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");
+            }
+
+
+            this.reservation = reservation;
+
+
+            this.checkInDate = reservation.getCheckInDate();
+            this.checkOutDate = reservation.getCheckOutDate();
+
+
+            this.numberOfNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+            this.roomPricePerOneNight = reservation.getRoom().totalRoomPricePerOneNight();
+        }
+
+        // ... rest of your methods (calculateTotal, processPayment, etc.)
+
+    @Override
+    public double calculateTotal() {
+        // 1. Base Room Cost (Price per night * nights)
+        // Note: roomPricePerOneNight already includes the room's default amenities
+        double baseRoomTotal = numberOfNights * roomPricePerOneNight;
+
+        // 2. Extra Amenities Cost (Price of each extra * nights)
+        double extraAmenitiesTotal = 0;
+        for (Amenity a : reservation.getChosenAmenities()) {
+            extraAmenitiesTotal += (a.getPrice() * numberOfNights);
+        }
+
+        // 3. Subtotal before tax
+        double subtotal = baseRoomTotal + extraAmenitiesTotal;
+
+        // 4. Final Total with 14% Tax
+        return subtotal * 1.14;
+    }
+public boolean processPayment(double amountPaid){
+        if(amountPaid>=calculateTotal()){
+            reservation.setPaid(true);
+            reservation.setReservationStatus(ReservationStatus.CONFIRMED);
+            return true;
+
+        }
+
+        reservation.setReservationStatus(ReservationStatus.PENDING);
+        return false;
+
+}
+    @Override
+    public String toString() {
+        // Define a format for the rows: %-16s is a left-aligned 16-character column
+        String rowFormat = "%-16s %s%n";
+        double amenities = reservation.getRoom().totalAmenitiesPrice();
+        double total = calculateTotal();
+
+        // Determine status without calling a "process" method (use a getter instead)
+        String status = reservation.isPaid() ? "PAID" : "UNPAID";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("------------------------------------\n");
+        sb.append("          HOTEL INVOICE             \n");
+        sb.append("------------------------------------\n");
+
+        sb.append(String.format(rowFormat, "Guest:", reservation.getGuest().getUsername()));
+        sb.append(String.format(rowFormat, "Room:", "#" + reservation.getRoom().getRoomNumber()));
+        sb.append(String.format(rowFormat, "Nights:", numberOfNights));
+        sb.append(String.format(rowFormat, "Room Rate:", "$" + String.format("%.2f", roomPricePerOneNight)));
+        sb.append(String.format(rowFormat, "Amenities:", "$" + String.format("%.2f", amenities)));
+
+        sb.append("------------------------------------\n");
+        sb.append(String.format(rowFormat, "TOTAL DUE:", "$" + String.format("%.2f", total)));
+        sb.append(String.format("%-16s %s%n", "", "(Including taxes)"));
+        sb.append(String.format(rowFormat, "Status:", status));
+        sb.append(String.format(rowFormat, "Date:", transactionDate));
+        sb.append(String.format(rowFormat, "Payment Method:", this.getPaymentmethod()));
+        sb.append("------------------------------------");
+
+        return sb.toString();
+    }
+
+
+    public PaymentMethod getPaymentmethod() {
+        return paymentmethod;
+    }
+
+    public void setPaymentmethod(PaymentMethod paymentmethod) {
+        this.paymentmethod = paymentmethod;
+    }
+    public Reservation getReservation() {
+        return reservation;
+    }
+}
+
+
+
+
+
+
+package models;
+
+public enum PaymentMethod {
+    CASH,CREDIT_CARD,ONLINE
+}
+package models;
+
+import database.HotelDatabase;
+import exceptions.InvalidDateException;
+import exceptions.WeakPwordException;
+import exceptions.InvalidCredentialException;
+import utils.ValidationUtil;
+import java.util.Scanner;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Receptionist extends Staff {
+
+    public Receptionist(String username, String password, LocalDate dateOfBirth, int workingHours) throws WeakPwordException, InvalidDateException {
+        super(username, password, dateOfBirth, Role.RECEPTIONIST, workingHours);
+        ValidationUtil.validatePassword(password);
+        ValidationUtil.validateDateOfBirth(dateOfBirth);
+        ValidationUtil.validateUsername(username);
+    }
+
+    // Check-in operations
+    public void checkIn(Reservation reservation) {
+        if (reservation == null) {
+            System.out.println("Error: No reservation provided for check-in.");
+            return;
+        }
+
+        if (reservation.isCheckedIn()) {
+
+            System.out.println("Notice: Guest '" + reservation.getGuest().getUsername()
+                    + "' is already checked in to Room #" + reservation.getRoom().getRoomNumber() + ".");
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate checkInDate = reservation.getCheckInDate();
+
+        if (today.isBefore(checkInDate)) {
+            System.out.println("Error: Cannot check in. Reservation starts on " + checkInDate
+                    + ". Today is " + today + ".");
+            return;
+        }
+
+        if (today.isAfter(reservation.getCheckOutDate())) {
+            System.out.println("Error: Cannot check in. Reservation already expired on "
+                    + reservation.getCheckOutDate() + ".");
+            return;
+        }
+
+        // Mark as checked in
+        reservation.setCheckedIn(true);
+        reservation.setReservationStatus(ReservationStatus.CONFIRMED);
+        System.out.println("== CHECK-IN SUCCESSFUL ==");
+        System.out.println("Guest: " + reservation.getGuest().getUsername());
+        System.out.println("Room: #" + reservation.getRoom().getRoomNumber());
+        System.out.println("Check-in Date: " + reservation.getCheckInDate());
+        System.out.println("Check-out Date: " + reservation.getCheckOutDate());
+    }
+
+    // Check-out operations
+    public Invoice checkOut(Reservation reservation) {
+        if (reservation == null) {
+            System.out.println("Error: No reservation provided for check-out.");
+            return null;
+        }
+
+        if (!reservation.isCheckedIn()) {
+
+            System.out.println("Error: Guest: " + reservation.getGuest().getUsername()
+                    + " was never checked in. Cannot check out.");
+            return null;
+        }
+
+        if (reservation.isCheckedOut()) {
+            System.out.println("Notice: Guest: " + reservation.getGuest().getUsername()
+                    + " has already been checked out.");
+            return reservation.getInvoice();
+        }
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(reservation.getCheckInDate())) {
+            System.out.println("Error: Cannot check out. Reservation hasn't started yet (starts "
+                    + reservation.getCheckInDate() + ").");
+            return null;
+        }
+        // Mark as checked out
+        reservation.setCheckedOut(true);
+        reservation.setReservationStatus(ReservationStatus.CONFIRMED);
+        // Generate the invoice
+        Invoice invoice = reservation.getInvoice();
+        if (invoice == null) {
+            invoice = new Invoice(reservation);
+            reservation.setInvoice(invoice);
+            HotelDatabase.invoices.add(invoice);
+        }
+
+        System.out.println("== CHECK-OUT SUCCESSFUL ==");
+        System.out.println("Guest: " + reservation.getGuest().getUsername());
+                System.out.println("Room:  #" + reservation.getRoom().getRoomNumber());
+        System.out.println("--Invoice Summary--");
+        System.out.println(invoice);
+        return invoice;
+    }
+    // Manual status update for edge cases
+    public void updateReservationStatus(Reservation reservation, ReservationStatus newStatus)
+            throws InvalidCredentialException {
+        if (reservation == null) {
+            throw new InvalidCredentialException("No reservation provided");
+        }
+
+        ReservationStatus current = reservation.getReservationStatus();
+        if (current == ReservationStatus.CANCELLED && newStatus != ReservationStatus.CANCELLED) {
+            throw new InvalidCredentialException("Cannot change status of CANCELLED reservation");
+        }
+        if (newStatus == ReservationStatus.COMPLETED) {
+            if (!reservation.isCheckedIn()) {
+                throw new InvalidCredentialException(
+                        "Cannot mark as COMPLETED. Guest was never checked in."
+                );
+            }
+            if (!reservation.isCheckedOut()) {
+                throw new InvalidCredentialException(
+                        "Cannot mark as COMPLETED. Guest was never checked out."
+                );
+            }
+        }
+        reservation.setReservationStatus(newStatus);
+        System.out.println("Updated: " + current + " â†’ " + newStatus);
+    }
+
+    // Auto-complete expired reservations
+    public int finalizeCompletedReservations() {
+        int count = 0;
+        LocalDate today = LocalDate.now();
+
+        for (Reservation res : HotelDatabase.reservations) {
+            if (res.getCheckOutDate().isBefore(today) &&
+                    res.isCheckedIn() &&
+                    !res.isCheckedOut() &&
+                    res.getReservationStatus() == ReservationStatus.CONFIRMED) {
+
+                res.setCheckedOut(true);
+                res.setReservationStatus(ReservationStatus.COMPLETED);
+
+                if (res.getInvoice() == null) {
+                    Invoice inv = new Invoice(res);
+                    res.setInvoice(inv);
+                    HotelDatabase.invoices.add(inv);
+                }
+                count++;
+            }
+        }
+        System.out.println("Auto-completed " + count + " expired reservations");
+        return count;
+    }
+
+    // Interactive menu for manual updates
+    public void manualStatusUpdateMenu() {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\nEnter Guest Username: ");
+        String username = sc.next();
+
+        List<Reservation> guestReservations = new ArrayList<>();
+        for (Reservation r : HotelDatabase.reservations) {
+            if (r.getGuest().getUsername().equalsIgnoreCase(username)) {
+                guestReservations.add(r);
+            }
+        }
+
+        if (guestReservations.isEmpty()) {
+            System.out.println("Error: No reservation found for '" + username + "'");
+            return;
+        }
+
+        System.out.println("\n--- Reservations for " + username + " ---");
+        for (int i = 0; i < guestReservations.size(); i++) {
+            Reservation res = guestReservations.get(i);
+            System.out.println((i+1) + ". Room #" + res.getRoom().getRoomNumber()
+                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                    + " | Status: " + res.getReservationStatus());
+        }
+
+        System.out.print("\nSelect reservation number to update: ");
+        int choice;
+        try {
+            choice = sc.nextInt();
+            if (choice < 1 || choice > guestReservations.size()) {
+                System.out.println("Invalid choice.");
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println("Invalid input.");
+            return;
+        }
+
+        Reservation found = guestReservations.get(choice - 1);
+        System.out.println("Current: " + found.getReservationStatus());
+        System.out.println("1.PENDING 2.CONFIRMED 3.CANCELLED 4.COMPLETED");
+        System.out.print("Choice: ");
+
+        try {
+            int statusChoice = sc.nextInt();
+            if (statusChoice < 1 || statusChoice > 4) {
+                System.out.println("Invalid choice (1-4 only)");
+                return;
+            }
+            ReservationStatus status = ReservationStatus.values()[statusChoice-1];
+            updateReservationStatus(found, status);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+    // Process payment for a checkout invoice.
+    public boolean processCheckoutPayment(Invoice invoice, double amountPaid) {
+        if (invoice == null) {
+            System.out.println("Error: No invoice provided for payment.");
+            return false;
+        }
+
+        boolean success = invoice.processPayment(amountPaid);
+        if (success) {
+            System.out.println("Payment of $" + String.format("%.2f", amountPaid) + " processed successfully.");
+            Guest guest = invoice.getReservation().getGuest();
+            double total = invoice.calculateTotal();
+            guest.setBalance(guest.getBalance() - total);
+            System.out.println("Guest balance updated. New balance: $" + String.format("%.2f", guest.getBalance()));
+            // Ensure COMPLETED status after successful payment
+            Reservation res = invoice.getReservation();
+            if (res != null && res.isCheckedOut() && res.getReservationStatus() != ReservationStatus.COMPLETED) {
+                res.setReservationStatus(ReservationStatus.COMPLETED);
+            }
+        } else {
+            System.out.println("Payment failed. Amount $" + String.format("%.2f", amountPaid)
+                    + " is insufficient. Total due: $" + String.format("%.2f", invoice.calculateTotal()));
+        }
+        return success;
+    }
+
+    public void viewAllGuests() {
+        super.viewAllGuests();
+    }
+
+    public void viewAllRooms() {
+        super.viewAllRooms();
+    }
+
+    public void viewAllReservations() {
+        System.out.println("\n--- All Reservations ---");
+        if (HotelDatabase.reservations.isEmpty()) {
+            System.out.println("No active reservations.");
+            return;
+        }
+        for (Reservation res : HotelDatabase.reservations) {
+            String marker = "";
+            if (res.getReservationStatus() == ReservationStatus.COMPLETED) marker = " [DONE]";
+            else if (res.getReservationStatus() == ReservationStatus.CANCELLED) marker = " [CANCELLED]";
+
+            System.out.println(res.getGuest().getUsername() + " | Room #" + res.getRoom().getRoomNumber()
+                    + " | " + res.getCheckInDate() + " to " + res.getCheckOutDate()
+                    + " | Status: " + res.getReservationStatus() + marker);
+        }
+    }
+
+    // View all invoices in the system.
+    public void viewAllInvoices() {
+        System.out.println("\n-- All Invoices --");
+        if (HotelDatabase.invoices.isEmpty()) {
+            System.out.println("No invoices generated yet.");
+        }
+        for (int i = 0; i < HotelDatabase.invoices.size(); i++) {
+            System.out.println("Invoice #" + (i + 1));
+            System.out.println(HotelDatabase.invoices.get(i));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Receptionist:" + username + ", Hours:" + workingHours;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+package models;
+import database.HotelDatabase;
+import exceptions.InvalidDateException;
+
+import java.time.LocalDate;
+
+
+public class Reservation  {
+   private Guest guest;
+   private Room room;
+   private LocalDate checkInDate =LocalDate.now();
+   private LocalDate checkOutDate=LocalDate.now().plusDays(3);
+   private ReservationStatus reservationStatus=ReservationStatus.PENDING;
+   private Invoice invoice;
+   private boolean checkedIn=false;
+   private boolean checkedOut=false;
+   private boolean isPaid=false;
+    private java.util.List<Amenity> chosenAmenities = new java.util.ArrayList<>();
+    public void addChosenAmenity(Amenity amenity) {
+        this.chosenAmenities.add(amenity);
+    }
+
+    public java.util.List<Amenity> getChosenAmenities() {
+        return this.chosenAmenities;
+    }
+    public Reservation(){}
+    public Reservation(Guest guest,Room room,LocalDate checkIn,LocalDate checkOut) throws InvalidDateException {
+        if (checkIn.isAfter(checkOut) || checkIn.equals(checkOut)) {
+            throw new InvalidDateException("Error: Check-out must be after check-in.");
+        }
+
+int length = HotelDatabase.reservations.size();
+        for(int i=0;i<length;i++) {
+if ((HotelDatabase.reservations.get(i).getRoom().getRoomNumber()==room.getRoomNumber())&&(HotelDatabase.reservations.get(i)).checkInDate.equals(checkIn))
+{throw new InvalidDateException("Error: Room #" + room.getRoomNumber() +
+        " is already reserved for " + checkIn);}
+        }
+
+        this.guest=guest;
+    this.room=room;
+    this.checkInDate=checkIn;
+    this.checkOutDate=checkOut;
+
+   }
+    public boolean isCancelled() {
+        return this.reservationStatus == ReservationStatus.CANCELLED;
+    }
+
+    public ReservationStatus getReservationStatus() {
+        return reservationStatus;
+    }
+    public Room getRoom(){
+       if(this.room==null){
+        throw new NullPointerException("There isn't a room assigned to this reservation");
+
+       }
+
+
+        return this.room;
+}
+public Guest getGuest(){
+       return guest;
+}
+
+public LocalDate getCheckInDate() {
+        if(checkInDate==null){
+            return LocalDate.now();
+        }
+
+
+        return checkInDate;
+    }
+    public LocalDate getCheckOutDate(){
+        if(checkOutDate==null){
+            return LocalDate.now().plusDays(3);
+        }
+       return checkOutDate;
+    }
+    public void setGuest(Guest guest){
+        this.guest=guest;
+    }
+    public void setRoom(Room room){
+        this.room=room;
+    }
+    public void setCheckInDate(LocalDate date) throws InvalidDateException{
+LocalDate today=LocalDate.now();
+if(today.isBefore(date)){
+        this.checkInDate=date;
+System.out.println("Check in date is changed");
+}
+else  throw new InvalidDateException("\"Check out Date cant be changed. The check-in date has already arrived or passed.\"");
+
+    }
+    public void setCheckOutDate(LocalDate date) throws InvalidDateException {
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(date)) {
+            this.checkOutDate = date;
+            System.out.println("Check out date has changed");
+        } else throw new InvalidDateException("\"Check out Date cant be changed. The check-in date has already arrived or passed.\"");
+    }
+    public boolean isCheckedIn() {
+        return checkedIn;
+    }
+
+    public boolean isCheckedOut() {
+        return checkedOut;
+    }
+
+    public void setCheckedIn(boolean checkedIn) {
+        this.checkedIn = checkedIn;
+    }
+
+    public void setCheckedOut(boolean checkedOut) {
+        this.checkedOut = checkedOut;
+    }
+
+    public void setReservationStatus(ReservationStatus status){
+     this.reservationStatus=status;
+    }
+
+    public Invoice getInvoice() {
+        return invoice;
+    }
+    public void cancelReservation() throws InvalidDateException{
+        LocalDate today=LocalDate.now();
+        if(today.isBefore(checkInDate)){
+        this.setReservationStatus(ReservationStatus.CANCELLED);
+ }
+        else throw new InvalidDateException("This reservation cant be cancelled. The checkin date has already arrived or passed  ");
+    }
+    @Override
+public String toString(){
+
+
+       return "Room number: "+room.getRoomNumber()+"\t checkin date: "+checkInDate+"\t checkout date: "+checkOutDate+"\t Reservation status: "+reservationStatus;
+
+
+}
+
+    public void setInvoice(Invoice invoice) {
+        this.invoice = invoice;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public void setPaid(boolean paid) {
+        isPaid = paid;
+    }
+}
+
+
+
+package models;
+
+public enum ReservationStatus {
+    PENDING,CONFIRMED,CANCELLED,COMPLETED
+}
+package models;
+
+public enum Role {
+    ADMIN,
+    RECEPTIONIST
+}
+package models;
+import database.HotelDatabase;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class Room {
+    private int roomNumber;
+    private RoomType type;
+    private ArrayList<Amenity> amenities= new ArrayList<>();
+
+
+
+    public Room(int roomNumber, RoomType type) {
+        this.roomNumber = roomNumber;
+        this.type = type;
+        if(type.getTypeName().equalsIgnoreCase("Single")){
+            this.amenities=new ArrayList<>(HotelDatabase.singleDefaults);
+        }
+        if(type.getTypeName().equalsIgnoreCase("double")){
+            this.amenities=new ArrayList<>(HotelDatabase.doubleDefaults);
+        }
+        if(type.getTypeName().equalsIgnoreCase("suite")){
+            this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);
+        }
+    }
+
+    public int getRoomNumber() { return this.roomNumber; }
+    public RoomType getType() { return this.type; }
+    public ArrayList<Amenity> getAmenities() { return this.amenities; }
+
+    public void addAmenity(Amenity amenity) {
+        this.amenities.add(amenity);
+    }
+
+    public void setType(RoomType type) {
+        this.type = type;
+    }
+    public double totalAmenitiesPrice(){
+        double sum=0;
+        int length= amenities.size();
+        for(int i=0;i<length;i++){
+
+            sum+=amenities.get(i).getPrice();
+
+        } return sum;
+    }
+    public double totalRoomPricePerOneNight(){
+        return totalAmenitiesPrice() + type.getBasePrice();
+    }
+    public void printAmenities(){
+        int length= amenities.size();
+
+        for(int i=0;i<length;i++){
+
+            System.out.println((i+1)+" "+amenities.get(i).getName());
+        }
+
+    }
+    @Override
+    public String toString(){
+
+
+    return "Room number: "+roomNumber+" Room Type: "+ type + " Amenities in the room: "+amenities;
+
+    }
+    public void addAmenities(){
+    Scanner input=new Scanner(System.in);
+    System.out.println("---All Amenities---");
+        for(int i=0;i<HotelDatabase.allAmenities.size();i++){
+
+            System.out.println(i+1+"\t"+HotelDatabase.allAmenities.get(i));
+        }
+    System.out.println("Enter the name of the amenitiy you want to add to this room: ");
+    String amenity= input.nextLine().trim();
+    for(int i = 0;i< HotelDatabase.allAmenities.size();i++){
+        if(HotelDatabase.allAmenities.get(i).getName().equalsIgnoreCase(amenity)){
+            for(int j=0;j<amenities.size();j++){
+                if(amenities.get(j).getName().equalsIgnoreCase(amenity)){
+                    System.out.println("this amenity is already in the room ");
+                    return;
+                }}
+
+          amenities.add(HotelDatabase.allAmenities.get(i));
+System.out.println(HotelDatabase.allAmenities.get(i).getName()+ " is successfuly added to Room "+ this.roomNumber);
+                return;
+
+
+
+        }
+
+
+    }
+
+
+    }
+}
+package models;
+
+public class RoomType  {
+    private String typeName;
+    private double basePrice;
+    private Roomtypee type;
+
+    public RoomType(String name, double price) {
+        this.typeName = name;
+        this.basePrice = price;
+        if(name.equalsIgnoreCase("single")){
+            this.type=Roomtypee.SINGLE;
+        }
+        if(name.equalsIgnoreCase("double")){
+            this.type=Roomtypee.DOUBLE;
+        }
+        if(name.equalsIgnoreCase("suite")){
+            this.type=Roomtypee.SUITE;
+        }
+    }
+public RoomType(Roomtypee typee){
+
+       this.type=typee;
+}
+    public String getTypeName() { return this.typeName; }
+    public double getBasePrice() { return this.basePrice; }
+    public Roomtypee getRoomType(){return  this.type;}
+
+
+    public void setBasePrice(double basePrice) {
+        this.basePrice = basePrice;
+    }
+
+    @Override
+    public String toString(){
+        return type.toString();
+    }
+}
+package models;
+
+public enum Roomtypee {
+    SINGLE,DOUBLE,SUITE
+}
+package models;
+
+import database.HotelDatabase;
+import exceptions.InvalidCredentialException;
+
+import java.time.LocalDate;
+
+public abstract class Staff {
+    protected String username;
+    protected String password;
+    protected LocalDate dateOfBirth;
+    protected Role role;
+    protected  int workingHours;
+
+
+    public Staff(String username, String password, LocalDate dateOfBirth, Role role, int workingHours) {
+        this.username = username;
+        this.password = password;
+        this.dateOfBirth = dateOfBirth;
+        this.role = role;
+        this.workingHours = workingHours;
+    }
+
+    public void viewAllGuests() {
+        System.out.println("\n--- Hotel Guests ---");
+        if (HotelDatabase.guests.isEmpty()) {
+            System.out.println("No guests registered yet.");
+            return;
+        }
+        for (Guest g : HotelDatabase.guests) {
+            System.out.println("Guest Username: " + g.getUsername());
+        }
+    }
+    public void viewAllRooms() {
+        System.out.println("\n--- Room Inventory ---");
+        if (HotelDatabase.rooms.isEmpty()) {
+            System.out.println("No rooms available in the system.");
+            return;
+        }
+        for (Room r : HotelDatabase.rooms) {
+System.out.println(r);        }
+    }
+    public void viewAllReservations() {
+        System.out.println("\n--- Current Reservations ---");
+        if (HotelDatabase.reservations.isEmpty()) {
+            System.out.println("No active reservations in the system.");
+            return;
+        }
+
+        // The loop is perfectly written and ready to go.
+        for (Reservation res : HotelDatabase.reservations) {
+            // We use a placeholder string to prevent red compile errors until Teammate 4 finishes.
+            System.out.println( "Guest username: "+ res.getGuest().getUsername()+"\t Checkin Date: "+res.getCheckInDate()+"\t Checkout date: "+res.getCheckOutDate()+"\t Reservation status: "+res.getReservationStatus());
+        }
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public int getWorkingHours() {
+        return workingHours;
+    }
+
+    public void setWorkingHours(int workingHours) {
+        this.workingHours = workingHours;
+    }
+    public static Staff login(String username, String password)
+            throws InvalidCredentialException {
+
+        //Check if database is empty
+        if (HotelDatabase.staff == null || HotelDatabase.staff.isEmpty()) {
+            throw new InvalidCredentialException("No users in system");
+        }
+
+        // Search through all guests using linear search
+        for (Staff g : HotelDatabase.staff) {
+            if (g.getUsername().equals(username)) {
+                if (g.verifyPassword(password)) {
+
+                    return g; // Return the found staff object
+                } else {
+                    throw new InvalidCredentialException("Wrong password");
+                }
+            }
+        }
+
+        // If loop finishes without finding username
+        throw new InvalidCredentialException("User '" + username + "' not found");
+    }
+    public boolean verifyPassword(String input) {
+        return this.password.equals(input);
+
+    }
+}
+
+package utils;
+
+import database.HotelDatabase;
+import exceptions.*;
+import java.time.LocalDate;
+import java.time.Period;
+import models.Guest;
+public class
+ValidationUtil {
+    public static void validatePassword(String password) throws WeakPwordException{
+        // Check no1: Not null and minimum length
+        if (password == null || password.length() < 8) {
+            throw new WeakPwordException("Password must be at least 8 characters long");
+        }
+
+        // Check no2: has at least one uppercase letter
+        boolean hasUppercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+                break;
+            }
+        }
+        if (!hasUppercase) {
+            throw new WeakPwordException("Password must contain at least one uppercase letter (A-Z)");
+        }
+
+        // Check no3: Has at least one lowercase letter
+        boolean hasLowercase = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+                break;
+            }
+        }
+        if (!hasLowercase) {
+            throw new WeakPwordException("Password must contain at least one lowercase letter (a-z)");
+        }
+
+        // Check no4: Has at least one digit
+        boolean hasDigit = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                hasDigit = true;
+                break;
+            }
+        }
+        if (!hasDigit) {
+            throw new WeakPwordException("Password must contain at least one number (0-9)");
+        }
+
+        // Check no5: Has at least one special character
+        String specialChars = "_.@$!%*?&";
+        boolean hasSpecial = false;
+        for (char c : password.toCharArray()) {
+            if (specialChars.indexOf(c) >= 0) {
+                hasSpecial = true;
+                break;
+            }
+        }
+        if (!hasSpecial) {
+            throw new WeakPwordException("Password must contain at least one special character: @$!%*?&");
+        }
+    }
+
+    public static void validateDateOfBirth(LocalDate dob) throws InvalidDateException {
+        if (dob == null) {
+            throw new InvalidDateException("Birth date required");
+        }
+        if (dob.isAfter(LocalDate.now())) {
+            throw new InvalidDateException("Birth date cannot be in the future");
+        }
+        int age = Period.between(dob, LocalDate.now()).getYears();
+        if (age < 18) {
+            throw new InvalidDateException("Must be 18+ to register (you are " + age + ")");
+        }
+    }
+
+    public static void validateUsername(String username) throws WeakPwordException {
+        if (username == null || username.trim().length() < 3) {
+            throw new WeakPwordException("Username must be 3+ characters");
+        }
+        // Check if username already exists in database
+        if (HotelDatabase.guests != null) {
+            for (Guest g : HotelDatabase.guests) {
+                if (g.getUsername().equalsIgnoreCase(username)) {
+                    throw new WeakPwordException("Username '" + username + "' already taken");
+                }
+            }
+        }
+    }
+}
+

@@ -8,23 +8,21 @@ public class Room {
     private int roomNumber;
     private RoomType type;
     private ArrayList<Amenity> amenities= new ArrayList<>();
-public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
-    this.roomNumber=roomNumber;
-    this.type=type;
-    this.amenities=amenities;
-}
-    public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities,Roomtypee typee){
-        type.setType(typee);
-    this.roomNumber=roomNumber;
-        this.type=type;
-        this.amenities=amenities;
 
-    }
+
 
     public Room(int roomNumber, RoomType type) {
         this.roomNumber = roomNumber;
         this.type = type;
-        this.amenities = new ArrayList<>();
+        if(type.getTypeName().equalsIgnoreCase("Single")){
+            this.amenities=new ArrayList<>(HotelDatabase.singleDefaults);
+        }
+        if(type.getTypeName().equalsIgnoreCase("double")){
+            this.amenities=new ArrayList<>(HotelDatabase.doubleDefaults);
+        }
+        if(type.getTypeName().equalsIgnoreCase("suite")){
+            this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);
+        }
     }
 
     public int getRoomNumber() { return this.roomNumber; }
@@ -61,12 +59,9 @@ public Room(int roomNumber,RoomType type,ArrayList<Amenity> amenities){
     }
     @Override
     public String toString(){
-    if (amenities.isEmpty())
-    {
-         return"Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ "No Amenties in this room";
-    }
 
-    return "Room number: "+roomNumber+" Room Type: "+ type+" Amenities in the room: "+ amenities;
+
+    return "Room number: "+roomNumber+" Room Type: "+ type + " Amenities in the room: "+amenities;
 
     }
     public void addAmenities(){
