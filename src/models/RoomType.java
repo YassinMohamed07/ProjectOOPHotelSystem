@@ -8,6 +8,15 @@ public class RoomType  {
     public RoomType(String name, double price) {
         this.typeName = name;
         this.basePrice = price;
+        if(name.equalsIgnoreCase("single")){
+            this.type=Roomtypee.SINGLE;
+        }
+        if(name.equalsIgnoreCase("double")){
+            this.type=Roomtypee.DOUBLE;
+        }
+        if(name.equalsIgnoreCase("suite")){
+            this.type=Roomtypee.SUITE;
+        }
     }
 public RoomType(Roomtypee typee){
 
@@ -17,9 +26,7 @@ public RoomType(Roomtypee typee){
     public double getBasePrice() { return this.basePrice; }
     public Roomtypee getRoomType(){return  this.type;}
 
-    public void setType(Roomtypee type) {
-        this.type = type;
-    }
+
     public void setBasePrice(double basePrice) {
         this.basePrice = basePrice;
     }
