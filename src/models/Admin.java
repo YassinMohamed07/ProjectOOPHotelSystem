@@ -24,12 +24,14 @@ public class Admin extends Staff implements Manageable {
         System.out.println("\n--- What would you like to ADD? ---");
         System.out.println("1. New Room");
         System.out.println("2. New Amenity");
-        System.out.print("Select an option (1-2): ");
+        System.out.println("3. New Room type");
+        System.out.print("Select an option (1-3): ");
         int choice = sc.nextInt();
 
         switch (choice) {
             case 1: addRoom(); break;
             case 2: addAmenity(); break;
+            case 3:addRoomType(); break;
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }

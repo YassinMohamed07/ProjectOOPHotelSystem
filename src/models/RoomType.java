@@ -33,6 +33,6 @@ public RoomType(Roomtypee typee){
 
     @Override
     public String toString(){
-        return type.toString();
+        return "Type name: "+typeName+" basePrice: "+basePrice;
     }
 }

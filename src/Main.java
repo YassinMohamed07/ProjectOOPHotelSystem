@@ -83,14 +83,21 @@ public  class Main  {
                                         String checkOutStr = input.next();
                                         checkOut = LocalDate.parse(checkOutStr);
 
-                                    System.out.println("Enter Room type (SINGLE, DOUBLE, SUITE):");
-                                    String typeStr = input.next().toUpperCase();
-                                    Roomtypee type = Roomtypee.valueOf(typeStr);
+                                    System.out.print("Enter Room type (");
+                                    for(int i=0;i<HotelDatabase.roomTypes.size();i++){
+                                        System.out.print(HotelDatabase.roomTypes.get(i).getTypeName());
+                                        if(i==HotelDatabase.roomTypes.size()-1){continue;}
+                                        System.out.print(",");
+                                    }
+                                    System.out.print("): ");
+                                    String typeStr = input.next();
+
+
 
                                     System.out.println("Enter your maximum budget per one night:");
                                     double maxprice = input.nextDouble();
 
-                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, type, maxprice);
+                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, typeStr, maxprice);
                                     searchSuccessful = true;
 
                                 } catch (DateTimeParseException e) {
