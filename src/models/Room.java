@@ -23,6 +23,7 @@ public class Room {
         if(type.getTypeName().equalsIgnoreCase("suite")){
             this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);
         }
+        else {this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);}
     }
 
     public int getRoomNumber() { return this.roomNumber; }
