@@ -89,14 +89,21 @@ public  class Main  {
                                         String checkOutStr = input.next();
                                         checkOut = LocalDate.parse(checkOutStr);
 
-                                    System.out.println("Enter Room type (SINGLE, DOUBLE, SUITE):");
-                                    String typeStr = input.next().toUpperCase();
-                                    Roomtypee type = Roomtypee.valueOf(typeStr);
+                                    System.out.print("Enter Room type (");
+                                    for(int i=0;i<HotelDatabase.roomTypes.size();i++){
+                                        System.out.print(HotelDatabase.roomTypes.get(i).getTypeName());
+                                        if(i==HotelDatabase.roomTypes.size()-1){continue;}
+                                        System.out.print(",");
+                                    }
+                                    System.out.print("): ");
+                                    String typeStr = input.next();
+
+
 
                                     System.out.println("Enter your maximum budget per one night:");
                                     double maxprice = input.nextDouble();
 
-                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, type, maxprice);
+                                    availableRooms = Guest.searchAvailableRooms(checkIn, checkOut, typeStr, maxprice);
                                     searchSuccessful = true;
 
                                 } catch (DateTimeParseException e) {
@@ -703,7 +710,7 @@ public class HotelDatabase {
         // --- 4. CREATE DATABASE ENTITIES ---
 
         // Guests
-        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,2,"zahra2 el maadi","A room with strong wifi"));
+        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,20000000,"zahra2 el maadi","A room with strong wifi"));
         guests.add(new Guest("Abdullah","Abdalaa.2007",LocalDate.of(2007,3,4),Gender.MALE,500,"Madinaty","A suite room with a mini bar"));
         guests.add(new Guest("Ali","Aliatef.2007",LocalDate.of(2007,10,10),Gender.MALE,200000,"Mokatam","A double room with big bed"));
 
@@ -799,12 +806,14 @@ public class Admin extends Staff implements Manageable {
         System.out.println("\n--- What would you like to ADD? ---");
         System.out.println("1. New Room");
         System.out.println("2. New Amenity");
-        System.out.print("Select an option (1-2): ");
+        System.out.println("3. New Room type");
+        System.out.print("Select an option (1-3): ");
         int choice = sc.nextInt();
 
         switch (choice) {
             case 1: addRoom(); break;
             case 2: addAmenity(); break;
+            case 3:addRoomType(); break;
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }
@@ -1469,7 +1478,7 @@ public class Guest {
 
     // SEARCH logic - finding available rooms based on criteria
     public static List<Room> searchAvailableRooms(LocalDate checkIn, LocalDate checkOut,
-                                                  Roomtypee type, double maxPrice)
+                                                  String typename, double maxPrice)
             throws InvalidDateException {
 
         // Validate dates
@@ -1488,7 +1497,7 @@ public class Guest {
         // Check each room in database
         for (Room room : HotelDatabase.rooms) {
             // Filtering by type
-            if (type != null && !room.getType().getRoomType().equals(type)) {
+            if (typename != null && !room.getType().getTypeName().equalsIgnoreCase(typename)) {
                 continue; // Skip!!!
             }
 
@@ -2166,12 +2175,13 @@ public class Room {
         if(type.getTypeName().equalsIgnoreCase("Single")){
             this.amenities=new ArrayList<>(HotelDatabase.singleDefaults);
         }
-        if(type.getTypeName().equalsIgnoreCase("double")){
+        else if(type.getTypeName().equalsIgnoreCase("double")){
             this.amenities=new ArrayList<>(HotelDatabase.doubleDefaults);
         }
-        if(type.getTypeName().equalsIgnoreCase("suite")){
+        else if(type.getTypeName().equalsIgnoreCase("suite")){
             this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);
         }
+        else {this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);}
     }
 
     public int getRoomNumber() { return this.roomNumber; }
@@ -2279,7 +2289,7 @@ public RoomType(Roomtypee typee){
 
     @Override
     public String toString(){
-        return type.toString();
+        return "Type name: "+typeName+" basePrice: "+basePrice;
     }
 }
 package models;
