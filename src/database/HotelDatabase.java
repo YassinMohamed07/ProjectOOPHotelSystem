@@ -88,7 +88,7 @@ public class HotelDatabase {
         // --- 4. CREATE DATABASE ENTITIES ---
 
         // Guests
-        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,2,"zahra2 el maadi","A room with strong wifi"));
+        guests.add(new Guest("Karim","KarimIsmail.2007",LocalDate.of(2007,2,20),Gender.MALE,20000000,"zahra2 el maadi","A room with strong wifi"));
         guests.add(new Guest("Abdullah","Abdalaa.2007",LocalDate.of(2007,3,4),Gender.MALE,500,"Madinaty","A suite room with a mini bar"));
         guests.add(new Guest("Ali","Aliatef.2007",LocalDate.of(2007,10,10),Gender.MALE,200000,"Mokatam","A double room with big bed"));
 

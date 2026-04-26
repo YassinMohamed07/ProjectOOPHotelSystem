@@ -17,10 +17,10 @@ public class Room {
         if(type.getTypeName().equalsIgnoreCase("Single")){
             this.amenities=new ArrayList<>(HotelDatabase.singleDefaults);
         }
-        if(type.getTypeName().equalsIgnoreCase("double")){
+        else if(type.getTypeName().equalsIgnoreCase("double")){
             this.amenities=new ArrayList<>(HotelDatabase.doubleDefaults);
         }
-        if(type.getTypeName().equalsIgnoreCase("suite")){
+        else if(type.getTypeName().equalsIgnoreCase("suite")){
             this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);
         }
         else {this.amenities=new ArrayList<>(HotelDatabase.suiteDefaults);}
