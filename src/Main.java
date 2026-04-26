@@ -572,13 +572,20 @@ adminRunning=false;
          System.out.println("Enter Gender (MAlE/FEMALE): ");
          String gen= input.next().toUpperCase();
          Gender gender=Gender.valueOf(gen);
-         try { Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
+         try {
+             if(balance<0){
+                 throw new Exception("Your balance cant be a negative number, Registration failed.");
+             }
+             Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
           regsucc=true;
           break;
          }
          catch (WeakPwordException e){
              System.out.println(e.getMessage());
          } catch (InvalidDateException e) {
+             System.out.println(e.getMessage());
+         }
+         catch (Exception e){
              System.out.println(e.getMessage());
          }
      }     break; }
