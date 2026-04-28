@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ReceptionistDashboardController"
+            prefHeight="700" prefWidth="950"
+            styleClass="root-pane">
+
+    <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-bar">
+                <Label text="Front Desk Dashboard" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="staffInfoLabel" text="Receptionist" style="-fx-text-fill: #ecf0f1; -fx-font-size: 14px;"/>
+                <Button text="Logout" onAction="#handleLogout" styleClass="btn-danger"
+                        style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
+            </HBox>
+        </top>
+
+        <center>
+            <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-padding: 5;">
+                <Tab text="  Reservations  ">
+                    <VBox spacing="12" style="-fx-padding: 15;">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="All Reservations" styleClass="section-header"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Refresh" onAction="#handleRefreshReservations" styleClass="btn-filter" style="-fx-font-size: 11px;"/>
+                            <Button text="Finalize Expired" onAction="#handleFinalizeExpired" styleClass="btn-secondary" style="-fx-font-size: 11px; -fx-padding: 6 12;"/>
+                        </HBox>
+
+                        <TableView fx:id="reservationsTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colResGuest" text="Guest" prefWidth="100"/>
+                                <TableColumn fx:id="colResRoom" text="Room #" prefWidth="70"/>
+                                <TableColumn fx:id="colResCheckIn" text="Check-In" prefWidth="110"/>
+                                <TableColumn fx:id="colResCheckOut" text="Check-Out" prefWidth="110"/>
+                                <TableColumn fx:id="colResStatus" text="Status" prefWidth="100"/>
+                                <TableColumn fx:id="colResCheckedIn" text="Checked In" prefWidth="85"/>
+                                <TableColumn fx:id="colResCheckedOut" text="Checked Out" prefWidth="90"/>
+                                <TableColumn fx:id="colResPaid" text="Paid" prefWidth="60"/>
+                            </columns>
+                            <placeholder><Label text="No reservations" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                        </TableView>
+
+                        <HBox spacing="10" alignment="CENTER" styleClass="filter-card">
+                            <Button text="Check-In" onAction="#handleCheckIn" styleClass="btn-success" prefWidth="130" prefHeight="36"/>
+                            <Button text="Check-Out" onAction="#handleCheckOut" styleClass="btn-primary" prefWidth="130" prefHeight="36"/>
+                            <VBox spacing="4">
+                                <Label text="Update Status To:" styleClass="field-label-light"/>
+                                <ComboBox fx:id="statusCombo" promptText="Select status" prefWidth="140"/>
+                            </VBox>
+                            <Button text="Update Status" onAction="#handleUpdateStatus" styleClass="btn-filter" prefHeight="36"/>
+                        </HBox>
+                        <Label fx:id="resStatusLabel" text="" wrapText="true"/>
+                    </VBox>
+                </Tab>
+                <Tab text="  Invoices and Payments  ">
+                    <VBox spacing="12" style="-fx-padding: 15;">
+                        <Label text="All Invoices" styleClass="section-header"/>
+                        <TableView fx:id="invoicesTable" prefHeight="250">
+                            <columns>
+                                <TableColumn fx:id="colInvGuest" text="Guest" prefWidth="110"/>
+                                <TableColumn fx:id="colInvRoom" text="Room #" prefWidth="80"/>
+                                <TableColumn fx:id="colInvNights" text="Nights" prefWidth="70"/>
+                                <TableColumn fx:id="colInvTotal" text="Total Due" prefWidth="120"/>
+                                <TableColumn fx:id="colInvPaid" text="Paid" prefWidth="70"/>
+                                <TableColumn fx:id="colInvMethod" text="Method" prefWidth="110"/>
+                            </columns>
+                            <placeholder><Label text="No invoices" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                        </TableView>
+
+                        <HBox spacing="15" alignment="CENTER" styleClass="filter-card">
+                            <VBox spacing="4">
+                                <Label text="Invoice Details" styleClass="field-label-light"/>
+                                <TextArea fx:id="invoiceDetailArea" editable="false" prefHeight="120" prefWidth="400" wrapText="true"/>
+                            </VBox>
+                            <VBox spacing="10" alignment="CENTER">
+                                <Button text="View Invoice" onAction="#handleViewInvoice" styleClass="btn-primary" prefWidth="180"/>
+                                <Button text="Process Payment" onAction="#handleProcessPayment" styleClass="btn-success" prefWidth="180"/>
+                                <Button text="Refresh Invoices" onAction="#handleRefreshInvoices" styleClass="btn-filter" prefWidth="180"/>
+                            </VBox>
+                        </HBox>
+                        <Label fx:id="invStatusLabel" text="" wrapText="true"/>
+                    </VBox>
+                </Tab>
+                <Tab text="  View All  ">
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                        <VBox spacing="15" style="-fx-padding: 15;">
+                            <Label text="All Guests" styleClass="section-header"/>
+                            <TableView fx:id="guestsTable" prefHeight="180">
+                                <columns>
+                                    <TableColumn fx:id="colGuestName" text="Username" prefWidth="150"/>
+                                    <TableColumn fx:id="colGuestGender" text="Gender" prefWidth="100"/>
+                                    <TableColumn fx:id="colGuestBal" text="Balance" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                            <Label text="All Rooms" styleClass="section-header"/>
+                            <TableView fx:id="allRoomsTable" prefHeight="180">
+                                <columns>
+                                    <TableColumn fx:id="colViewRoomNum" text="Room #" prefWidth="100"/>
+                                    <TableColumn fx:id="colViewRoomType" text="Type" prefWidth="120"/>
+                                    <TableColumn fx:id="colViewRoomPrice" text="Price/Night" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                            <Button text="Refresh" onAction="#handleRefreshViewAll" styleClass="btn-filter"/>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+            </TabPane>
+        </center>
+    </BorderPane>
+</AnchorPane>

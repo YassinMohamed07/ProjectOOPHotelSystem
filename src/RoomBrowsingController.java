@@ -104,10 +104,10 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             }
         }
         // Determine room type filter
-        Roomtypee selectedType = null;
+        String selectedType = null;
         String typeStr = filterRoomType.getValue();
         if (typeStr != null && !typeStr.equals("All Types")) {
-            selectedType = Roomtypee.valueOf(typeStr);
+            selectedType = typeStr;
         }
         // Search using the Guest model's existing method
         try {
@@ -123,9 +123,7 @@ public class RoomBrowsingController implements Initializable, GuestAware {
 
             if (!selectedAmenities.isEmpty()) {
                 results = results.stream().filter(room -> {
-                    List<String> roomAmenityNames = room.getAmenities().stream()
-                            .map(Amenity::getName)
-                            .collect(Collectors.toList());
+                    List<String> roomAmenityNames = room.getAmenities().stream().map(Amenity::getName).collect(Collectors.toList());
                     return roomAmenityNames.containsAll(selectedAmenities);
                 }).collect(Collectors.toList());
             }
