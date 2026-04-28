@@ -48,10 +48,11 @@ This project is a fully functional Desktop Hotel Reservation System built entire
 
 
 ## 💻 Technology Stack
-Language: Java UI Framework: JavaFX (FXML, CSS).
-Concurrency: Java Threads / JavaFX Task & Service classes.
-Networking: Java Sockets (ServerSocket and Socket).
-Version Control: Git & GitHub.
+* **Language**: Java 
+* **UI Framework**: JavaFX (FXML, CSS).
+* **Concurrency**: Java Threads / JavaFX Task & Service classes.
+* **Networking**: Java Sockets (ServerSocket and Socket).
+* **Version Control**: Git & GitHub.
 
 
 ## 🎯 Milestones
