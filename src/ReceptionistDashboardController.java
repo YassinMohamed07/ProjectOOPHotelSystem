@@ -121,7 +121,6 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
     private void handleCheckOut() {
         Reservation selected = reservationsTable.getSelectionModel().getSelectedItem();
         if (selected == null) { setResStatus("Select a reservation to check out.", true); return; }
-
         if (!selected.isCheckedIn()) { setResStatus("Guest not checked in yet.", true); return; }
         if (selected.isCheckedOut()) { setResStatus("Guest already checked out.", true); return; }
 
@@ -174,9 +173,7 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
     private void handleProcessPayment() {
         Invoice selected = invoicesTable.getSelectionModel().getSelectedItem();
         if (selected == null) { setInvStatus("Select an invoice to process payment.", true); return; }
-
-        if (selected.getReservation().isPaid()) {
-            setInvStatus("This invoice is already paid.", true); return;
+        if (selected.getReservation().isPaid()) {setInvStatus("This invoice is already paid.", true); return;
         }
         double total = selected.calculateTotal();
         Guest guest = selected.getReservation().getGuest();

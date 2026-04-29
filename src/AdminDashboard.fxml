@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="AdminDashboardController"
+            prefHeight="700" prefWidth="950"
+            styleClass="root-pane">
+
+    <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-bar">
+                <Label text="Admin Dashboard" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="adminInfoLabel" text="Admin" style="-fx-text-fill: #ecf0f1; -fx-font-size: 14px;"/>
+                <Button text="Logout" onAction="#handleLogout" styleClass="btn-danger"
+                        style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
+            </HBox>
+        </top>
+        <center>
+            <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-padding: 5;">
+                <Tab text="  Room Management  ">
+                    <VBox spacing="15" style="-fx-padding: 15;">
+                        <HBox spacing="15" alignment="CENTER_LEFT" styleClass="filter-card">
+                            <VBox spacing="4">
+                                <Label text="Room Number" styleClass="field-label-light"/>
+                                <TextField fx:id="roomNumField" promptText="e.g. 301" prefWidth="100"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Room Type" styleClass="field-label-light"/>
+                                <ComboBox fx:id="roomTypeCombo" promptText="Select type" prefWidth="160"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Amenity to Add" styleClass="field-label-light"/>
+                                <ComboBox fx:id="roomAmenityCombo" promptText="Select amenity" prefWidth="160"/>
+                            </VBox>
+                            <VBox spacing="4" alignment="BOTTOM_LEFT">
+                                <Label text=" "/>
+                                <HBox spacing="8">
+                                    <Button text="Add Room" onAction="#handleAddRoom" styleClass="btn-success" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Update Type" onAction="#handleUpdateRoomType" styleClass="btn-primary" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Add Amenity" onAction="#handleAddAmenityToRoom" styleClass="btn-filter" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Delete Room" onAction="#handleDeleteRoom" styleClass="btn-danger" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        <TableView fx:id="roomsTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colRoomNum" text="Room #" prefWidth="80"/>
+                                <TableColumn fx:id="colRoomTypeName" text="Type" prefWidth="120"/>
+                                <TableColumn fx:id="colRoomBasePrice" text="Base Price" prefWidth="120"/>
+                                <TableColumn fx:id="colRoomAmenities" text="Amenities" prefWidth="280"/>
+                                <TableColumn fx:id="colRoomTotalPrice" text="Total/Night" prefWidth="120"/>
+                            </columns>
+                            <placeholder><Label text="No rooms in the system" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                        </TableView>
+                        <Label fx:id="roomStatusLabel" text="" wrapText="true"/>
+                    </VBox>
+                </Tab>
+                <Tab text="  Amenity Management  ">
+                    <VBox spacing="15" style="-fx-padding: 15;">
+                        <HBox spacing="15" alignment="CENTER_LEFT" styleClass="filter-card">
+                            <VBox spacing="4">
+                                <Label text="Amenity Name" styleClass="field-label-light"/>
+                                <TextField fx:id="amenityNameField" promptText="e.g. Spa" prefWidth="160"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Price ($)" styleClass="field-label-light"/>
+                                <TextField fx:id="amenityPriceField" promptText="e.g. 150" prefWidth="120"/>
+                            </VBox>
+                            <VBox spacing="4" alignment="BOTTOM_LEFT">
+                                <Label text=" "/>
+                                <HBox spacing="8">
+                                    <Button text="Add Amenity" onAction="#handleAddAmenity" styleClass="btn-success" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Update Price" onAction="#handleUpdateAmenity" styleClass="btn-primary" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Delete Amenity" onAction="#handleDeleteAmenity" styleClass="btn-danger" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        <TableView fx:id="amenitiesTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="colAmenityName" text="Name" prefWidth="250"/>
+                                <TableColumn fx:id="colAmenityPrice" text="Price/Night" prefWidth="200"/>
+                            </columns>
+                            <placeholder><Label text="No amenities in the system" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                        </TableView>
+                        <Label fx:id="amenityStatusLabel" text="" wrapText="true"/>
+                    </VBox>
+                </Tab>
+                <Tab text="  View All  ">
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                        <VBox spacing="20" style="-fx-padding: 15;">
+                            <Label text="All Guests" styleClass="section-header"/>
+                            <TableView fx:id="guestsTable" prefHeight="180">
+                                <columns>
+                                    <TableColumn fx:id="colGuestUsername" text="Username" prefWidth="150"/>
+                                    <TableColumn fx:id="colGuestGender" text="Gender" prefWidth="100"/>
+                                    <TableColumn fx:id="colGuestAge" text="Age" prefWidth="80"/>
+                                    <TableColumn fx:id="colGuestBalance" text="Balance" prefWidth="120"/>
+                                    <TableColumn fx:id="colGuestAddress" text="Address" prefWidth="200"/>
+                                </columns>
+                                <placeholder><Label text="No guests" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                            </TableView>
+                            <Label text="All Room Types" styleClass="section-header"/>
+                            <TableView fx:id="roomTypesTable" prefHeight="140">
+                                <columns>
+                                    <TableColumn fx:id="colRTName" text="Type Name" prefWidth="250"/>
+                                    <TableColumn fx:id="colRTPrice" text="Base Price" prefWidth="200"/>
+                                </columns>
+                                <placeholder><Label text="No room types" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                            </TableView>
+                            <HBox spacing="10" alignment="CENTER">
+                                <Button text="Refresh All Data" onAction="#handleRefreshAll" styleClass="btn-filter"/>
+                            </HBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+            </TabPane>
+        </center>
+    </BorderPane>
+</AnchorPane>
