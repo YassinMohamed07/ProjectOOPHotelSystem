@@ -73,7 +73,11 @@ public class GuestDashboardController implements Initializable, GuestAware {
     private void handleBrowseRooms() {
         SceneNavigator.navigateTo("RoomBrowsing.fxml", currentGuest);
     }
-
+    //Navigate to Reservation Management screen.
+    @FXML
+    private void handleMyReservations() {
+        SceneNavigator.navigateTo("ReservationManagement.fxml", currentGuest);
+    }
     //Logout and return to Log-in/Register screen.
     @FXML
     private void handleLogout() {
