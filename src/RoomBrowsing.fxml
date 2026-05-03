@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="RoomBrowsingController"
+            prefHeight="700" prefWidth="950"
+            styleClass="root-pane">
+
+    <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-bar">
+                <Label text="Browse Rooms" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="guestInfoLabel" text="Guest" style="-fx-text-fill: #ecf0f1; -fx-font-size: 14px;"/>
+                <Button text="Back to Dashboard" onAction="#handleBackToDashboard" styleClass="btn-secondary"
+                        style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
+            </HBox>
+        </top>
+        <center>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                <VBox spacing="20" alignment="TOP_CENTER" style="-fx-padding: 25;">
+                    <VBox spacing="14" styleClass="filter-card">
+                        <Label text="Search Filters" style="-fx-text-fill: #3498db; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                        <HBox spacing="20" alignment="CENTER_LEFT">
+                            <VBox spacing="4">
+                                <Label text="Room Type" styleClass="field-label-light"/>
+                                <ComboBox fx:id="filterRoomType" promptText="All Types" prefWidth="160"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Max Price / Night ($)" styleClass="field-label-light"/>
+                                <TextField fx:id="filterMaxPrice" promptText="e.g. 5000" prefWidth="140"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Check-In Date" styleClass="field-label-light"/>
+                                <DatePicker fx:id="filterCheckIn" promptText="Select date" prefWidth="160"/>
+                            </VBox>
+                            <VBox spacing="4">
+                                <Label text="Check-Out Date" styleClass="field-label-light"/>
+                                <DatePicker fx:id="filterCheckOut" promptText="Select date" prefWidth="160"/>
+                            </VBox>
+                        </HBox>
+                        <VBox spacing="6">
+                            <Label text="Amenities" styleClass="field-label-light"/>
+                            <FlowPane fx:id="amenitiesPane" hgap="15" vgap="8"/>
+                        </VBox>
+
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Button text="Search Rooms" onAction="#handleSearch"
+                                    styleClass="btn-primary" prefWidth="160" prefHeight="38"/>
+                            <Button text="Clear Filters" onAction="#handleClearFilters"
+                                    styleClass="btn-secondary" prefWidth="140" prefHeight="38"
+                                    style="-fx-font-size: 12px;"/>
+                        </HBox>
+                    </VBox>
+                    <VBox spacing="10">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Available Rooms" styleClass="section-header"/>
+                            <Label fx:id="resultCountLabel" text="" style="-fx-text-fill: #94a3b8; -fx-font-size: 13px;"/>
+                        </HBox>
+
+                        <TableView fx:id="roomsTable" prefHeight="260">
+                            <columns>
+                                <TableColumn fx:id="columnRoomNum" text="Room #" prefWidth="80"/>
+                                <TableColumn fx:id="columnRoomType" text="Type" prefWidth="120"/>
+                                <TableColumn fx:id="columnBasePrice" text="Base Price" prefWidth="120"/>
+                                <TableColumn fx:id="columnAmenities" text="Amenities" prefWidth="240"/>
+                                <TableColumn fx:id="columnTotalPrice" text="Total / Night" prefWidth="130"/>
+                            </columns>
+                            <placeholder>
+                                <Label text="Use the filters above to search for rooms" style="-fx-text-fill: rgba(255,255,255,0.4);"/>
+                            </placeholder>
+                        </TableView>
+                    </VBox>
+                    <HBox alignment="CENTER">
+                        <Button text="Book Selected Room" onAction="#handleBookRoom"
+                                styleClass="btn-success" prefWidth="220" prefHeight="44"/>
+                    </HBox>
+
+                </VBox>
+            </ScrollPane>
+        </center>
+    </BorderPane>
+</AnchorPane>

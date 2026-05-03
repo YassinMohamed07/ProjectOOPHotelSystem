@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ReservationController"
+            prefHeight="700" prefWidth="950"
+            styleClass="root-pane">
+
+    <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-bar">
+                <Label text="My Reservations" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="guestInfoLabel" text="Guest" style="-fx-text-fill: #ecf0f1; -fx-font-size: 14px;"/>
+                <Button text="Back to Dashboard" onAction="#handleBackToDashboard" styleClass="btn-secondary"
+                        style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
+            </HBox>
+        </top>
+        <center>
+            <VBox spacing="20" alignment="TOP_CENTER" style="-fx-padding: 25;">
+                <HBox spacing="15" alignment="CENTER_LEFT">
+                    <Label text="Booking History" styleClass="section-header"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Refresh" onAction="#handleRefresh" styleClass="btn-filter"/>
+                </HBox>
+                <TableView fx:id="reservationsTable" prefHeight="380"
+                           VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colRoomNum" text="Room #" prefWidth="80"/>
+                        <TableColumn fx:id="colRoomType" text="Room Type" prefWidth="120"/>
+                        <TableColumn fx:id="colCheckIn" text="Check-In" prefWidth="130"/>
+                        <TableColumn fx:id="colCheckOut" text="Check-Out" prefWidth="130"/>
+                        <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                        <TableColumn fx:id="colPaid" text="Paid" prefWidth="70"/>
+                        <TableColumn fx:id="colTotal" text="Total Cost" prefWidth="120"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="You have no reservations yet" style="-fx-text-fill: rgba(255,255,255,0.4);"/>
+                    </placeholder>
+                </TableView>
+                <HBox spacing="15" alignment="CENTER">
+                    <Button text="Cancel Selected Reservation" onAction="#handleCancelReservation"
+                            styleClass="btn-danger" prefWidth="260" prefHeight="42"/>
+                    <Button text="Browse Rooms" onAction="#handleBrowseRooms"
+                            styleClass="btn-primary" prefWidth="200" prefHeight="42"/>
+                </HBox>
+                <Label fx:id="statusLabel" text="" wrapText="true" maxWidth="600"/>
+            </VBox>
+        </center>
+    </BorderPane>
+</AnchorPane>
