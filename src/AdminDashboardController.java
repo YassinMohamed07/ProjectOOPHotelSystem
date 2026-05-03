@@ -6,7 +6,6 @@ import javafx.scene.control.*;
 import models.*;
 import database.HotelDatabase;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 

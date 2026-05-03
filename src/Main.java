@@ -18,10 +18,11 @@ import java.util.logging.ConsoleHandler;
 public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
-        StackPane rootpane = new StackPane();
-        Scene scene = new Scene(rootpane);
-        SceneNavigator.setRootPane(rootpane);
+        StackPane rootPane = new StackPane();
+        SceneNavigator.setRootPane(rootPane);
         Image icon = new Image("hotel.png");
+        Scene scene = new Scene(rootPane, 950, 700);
+        scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.getIcons().add(icon);
         primaryStage.setTitle("Hotel Reservation System");

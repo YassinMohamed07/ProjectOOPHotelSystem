@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="CheckoutController"
+            prefHeight="700" prefWidth="950"
+            styleClass="root-pane">
+
+    <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+
+        <!-- TOP HEADER BAR -->
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-bar">
+                <Label text="Checkout &amp; Payment" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="balanceInfoLabel" text="Balance: $0.00"
+                       style="-fx-text-fill: #2ecc71; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                <Button text="Back to Dashboard" onAction="#handleBackToDashboard" styleClass="btn-secondary"
+                        style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
+            </HBox>
+        </top>
+
+        <!-- CENTER CONTENT -->
+        <center>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                <VBox spacing="22" alignment="TOP_CENTER" style="-fx-padding: 25;">
+                    <VBox spacing="10">
+                        <Label text="Unpaid Reservations" styleClass="section-header"/>
+                        <TableView fx:id="unpaidTable" prefHeight="200">
+                            <columns>
+                                <TableColumn fx:id="colRoomNum" text="Room #" prefWidth="80"/>
+                                <TableColumn fx:id="colRoomType" text="Type" prefWidth="120"/>
+                                <TableColumn fx:id="colCheckIn" text="Check-In" prefWidth="130"/>
+                                <TableColumn fx:id="colCheckOut" text="Check-Out" prefWidth="130"/>
+                                <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                                <TableColumn fx:id="colTotal" text="Total Due" prefWidth="130"/>
+                            </columns>
+                            <placeholder>
+                                <Label text="No unpaid reservations" style="-fx-text-fill: rgba(255,255,255,0.4);"/>
+                            </placeholder>
+                        </TableView>
+                    </VBox>
+                    <HBox spacing="30" alignment="TOP_CENTER">
+                        <VBox spacing="14" styleClass="filter-card" prefWidth="300">
+                            <Label text="Payment Details" style="-fx-text-fill: #3498db; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                            <VBox spacing="5">
+                                <Label text="Payment Method" styleClass="field-label-light"/>
+                                <ComboBox fx:id="paymentMethodCombo" promptText="Select method" prefWidth="260"/>
+                            </VBox>
+                            <Button text="Generate Invoice" onAction="#handleGenerateInvoice"
+                                    styleClass="btn-filter" prefWidth="260" prefHeight="38"/>
+                            <Separator/>
+                            <Button text="Confirm Payment" onAction="#handleConfirmPayment"
+                                    styleClass="btn-success" prefWidth="260" prefHeight="44"/>
+                        </VBox>
+                        <VBox spacing="10" styleClass="invoice-card" prefWidth="400"
+                              HBox.hgrow="ALWAYS">
+                            <Label text="Invoice Summary" styleClass="invoice-title"/>
+                            <Separator/>
+                            <TextArea fx:id="invoiceSummary" editable="false"
+                                      prefHeight="220" wrapText="true"
+                                      promptText="Select a reservation and click 'Generate Invoice' to view the summary."/>
+                        </VBox>
+                    </HBox>
+                    <Label fx:id="statusLabel" text="" wrapText="true" maxWidth="600"/>
+                </VBox>
+            </ScrollPane>
+        </center>
+    </BorderPane>
+</AnchorPane>

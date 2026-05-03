@@ -26,7 +26,6 @@
                 <VBox spacing="20" alignment="TOP_CENTER" style="-fx-padding: 25;">
                     <VBox spacing="14" styleClass="filter-card">
                         <Label text="Search Filters" style="-fx-text-fill: #3498db; -fx-font-size: 16px; -fx-font-weight: bold;"/>
-
                         <HBox spacing="20" alignment="CENTER_LEFT">
                             <VBox spacing="4">
                                 <Label text="Room Type" styleClass="field-label-light"/>
@@ -40,8 +39,6 @@
                                 <Label text="Check-In Date" styleClass="field-label-light"/>
                                 <DatePicker fx:id="filterCheckIn" promptText="Select date" prefWidth="160"/>
                             </VBox>
-
-
                             <VBox spacing="4">
                                 <Label text="Check-Out Date" styleClass="field-label-light"/>
                                 <DatePicker fx:id="filterCheckOut" promptText="Select date" prefWidth="160"/>
