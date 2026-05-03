@@ -17,6 +17,7 @@ public class HotelDatabase {
    public static  ArrayList<Amenity> singleDefaults = new ArrayList<>();
     public static ArrayList<Amenity> doubleDefaults= new ArrayList<>();
    public static  ArrayList<Amenity> suiteDefaults = new ArrayList<>();
+   public static ArrayList<Amenity> extraAmenities=new ArrayList<>();
     public static void initialize() throws InvalidDateException, WeakPwordException {
         // --- 1. DEFINE STANDARD AMENITIES (Price = 0.0) ---
         Amenity basicWifi = new Amenity("Basic Wi-Fi", 0.0);
@@ -41,6 +42,24 @@ public class HotelDatabase {
         Amenity airportTransfer = new Amenity("Airport Limousine Transfer", 80.0);
         Amenity champagne = new Amenity("Champagne & Fruit Platter", 50.0);
         Amenity laundry = new Amenity("Same-Day Laundry Service", 40.0);
+extraAmenities.add(fiberWifi);
+        extraAmenities.add(lateCheckout);
+        extraAmenities.add(spaAccess);
+        extraAmenities.add(parking);
+        extraAmenities.add(sportsChannels);
+        extraAmenities.add(streaming);
+        extraAmenities.add(massage);
+        extraAmenities.add(airportTransfer);
+        extraAmenities.add(champagne);
+        extraAmenities.add(laundry);
+
+
+
+
+
+
+
+
 
         // Add ALL to the master database list so the system recognizes them
         allAmenities.add(basicWifi);
