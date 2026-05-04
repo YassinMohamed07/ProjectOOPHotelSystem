@@ -46,6 +46,7 @@ public class AdminDashboardController implements Initializable, StaffAware {
     @FXML private TableColumn<Guest, String> colGuestAge;
     @FXML private TableColumn<Guest, String> colGuestBalance;
     @FXML private TableColumn<Guest, String> colGuestAddress;
+
     @FXML private TableView<RoomType> roomTypesTable;
     @FXML private TableColumn<RoomType, String> colRTName;
     @FXML private TableColumn<RoomType, String> colRTPrice;
@@ -233,11 +234,11 @@ public class AdminDashboardController implements Initializable, StaffAware {
     @FXML
     private void handleRefreshAll() { refreshAll(); }
     private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); refreshStaff(); }
-    private void refreshRooms() { roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms)); roomsTable.refresh(); }
-    private void refreshAmenities() { amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities)); amenitiesTable.refresh(); }
-    private void refreshGuests() { guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests)); guestsTable.refresh(); }
-    private void refreshRoomTypes() { roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes)); roomTypesTable.refresh(); }
-    private void refreshStaff() { staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff)); staffTable.refresh(); }
+    private void refreshRooms() { roomsTable.setItems(null); roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms)); }
+    private void refreshAmenities() { amenitiesTable.setItems(null); amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities)); }
+    private void refreshGuests() { guestsTable.setItems(null); guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests)); }
+    private void refreshRoomTypes() { roomTypesTable.setItems(null); roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes)); }
+    private void refreshStaff() { staffTable.setItems(null); staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff)); }
     @FXML
     private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
 

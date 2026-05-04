@@ -6,7 +6,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import models.Guest;
 import models.Reservation;
-import javafx.fxml.FXMLLoader;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -65,6 +64,7 @@ public class GuestDashboardController implements Initializable, GuestAware {
     private void refreshReservationsTable() {
         List<Reservation> reservations = currentGuest.viewReservations();
         ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
+        reservationsTable.setItems(null);
         reservationsTable.setItems(observableReservations);
     }
 

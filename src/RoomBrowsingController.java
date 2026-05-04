@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import models.Amenity;
 
 //Controller for the Room Browsing screen.
 //Allows guests to search/filter available rooms and book them.
@@ -35,6 +36,11 @@ public class RoomBrowsingController implements Initializable, GuestAware {
 
     private Guest currentGuest;
     private List<CheckBox> amenityCheckBoxes = new ArrayList<>();
+
+    // Extra Amenities
+    @FXML private ComboBox<String> extraAmenityCombo;
+    @FXML private Label selectedExtrasLabel;
+    private List<Amenity> selectedExtraAmenities = new ArrayList<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -68,6 +74,11 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         });
         columnTotalPrice.setCellValueFactory(data -> new SimpleStringProperty(
                 "$" + String.format("%.2f", data.getValue().totalRoomPricePerOneNight())));
+
+        // Populate Extra Amenities combo from the database's paid extras list
+        for (Amenity amenity : HotelDatabase.extraAmenities) {
+            extraAmenityCombo.getItems().add(amenity.getName() + " ($" + String.format("%.2f", amenity.getPrice()) + ")");
+        }
     }
     @Override
     public void setGuest(Guest guest) {
@@ -155,6 +166,10 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         }
         roomsTable.getItems().clear();
         resultCountLabel.setText("");
+        // Clear extra amenities selection
+        selectedExtraAmenities.clear();
+        extraAmenityCombo.setValue(null);
+        updateSelectedExtrasLabel();
     }
     //Books the selected room for the current guest.
     @FXML
@@ -177,17 +192,36 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             // Create the reservation using the Guest model's method
             Reservation newRes = currentGuest.makeReservation(selectedRoom, checkIn, checkOut);
 
-            // Generate invoice immediately
+            // Add selected extra amenities to the reservation
+            for (Amenity extra : selectedExtraAmenities) {
+                newRes.addChosenAmenity(extra);
+            }
+
+            // Generate invoice immediately (it will include the extras via calculateTotal)
             Invoice inv = new Invoice(newRes);
             newRes.setInvoice(inv);
 
             double totalEstimate = inv.calculateTotal();
 
+            // Build extras summary for the confirmation message
+            String extrasSummary = "";
+            if (!selectedExtraAmenities.isEmpty()) {
+                extrasSummary = "\nExtras: " + selectedExtraAmenities.stream()
+                        .map(Amenity::getName)
+                        .collect(Collectors.joining(", "));
+            }
+
             showAlert(Alert.AlertType.INFORMATION, "Booking Successful!",
                     "Room #" + selectedRoom.getRoomNumber() + " has been reserved!\n\n"
                             + "Check-in: " + checkIn + "\n"
-                            + "Check-out: " + checkOut + "\n"
+                            + "Check-out: " + checkOut
+                            + extrasSummary + "\n"
                             + "Estimated Total (incl. tax): $" + String.format("%.2f", totalEstimate));
+
+            // Clear extras after booking
+            selectedExtraAmenities.clear();
+            extraAmenityCombo.setValue(null);
+            updateSelectedExtrasLabel();
 
             // Refresh the search to remove the now-booked room
             handleSearch();
@@ -209,5 +243,71 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         alert.setHeaderText(null);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    //Handles adding an extra amenity to the booking
+    @FXML
+    private void handleAddExtraAmenity() {
+        Room selectedRoom = roomsTable.getSelectionModel().getSelectedItem();
+        if (selectedRoom == null) {
+            showAlert(Alert.AlertType.WARNING, "No Room Selected",
+                    "Please select a room from the table first, then add extras.");
+            return;
+        }
+        if (extraAmenityCombo.getValue() == null) {
+            showAlert(Alert.AlertType.WARNING, "No Amenity Selected",
+                    "Please select an extra amenity from the dropdown.");
+            return;
+        }
+        int idx = extraAmenityCombo.getSelectionModel().getSelectedIndex();
+        Amenity selectedAmenity = HotelDatabase.extraAmenities.get(idx);
+
+        // Check for duplicates in selected extras
+        for (Amenity a : selectedExtraAmenities) {
+            if (a.getName().equalsIgnoreCase(selectedAmenity.getName())) {
+                showAlert(Alert.AlertType.INFORMATION, "Already Added",
+                        "'" + selectedAmenity.getName() + "' is already in your extras list.");
+                return;
+            }
+        }
+        // Check if room already has this amenity as a default
+        for (Amenity a : selectedRoom.getAmenities()) {
+            if (a.getName().equalsIgnoreCase(selectedAmenity.getName())) {
+                showAlert(Alert.AlertType.INFORMATION, "Already Included",
+                        "'" + selectedAmenity.getName() + "' is already included with this room.");
+                return;
+            }
+        }
+
+        selectedExtraAmenities.add(selectedAmenity);
+        updateSelectedExtrasLabel();
+    }
+
+    //Handles clearing all selected extra amenities
+    @FXML
+    private void handleClearExtras() {
+        selectedExtraAmenities.clear();
+        extraAmenityCombo.setValue(null);
+        updateSelectedExtrasLabel();
+    }
+
+    //Updates the label showing currently selected extra amenities
+    private void updateSelectedExtrasLabel() {
+        if (selectedExtraAmenities.isEmpty()) {
+            selectedExtrasLabel.setText("No extras selected");
+            selectedExtrasLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 13px;");
+        } else {
+            double totalExtra = 0;
+            StringBuilder sb = new StringBuilder("Selected: ");
+            for (int i = 0; i < selectedExtraAmenities.size(); i++) {
+                Amenity a = selectedExtraAmenities.get(i);
+                if (i > 0) sb.append(", ");
+                sb.append(a.getName()).append(" ($").append(String.format("%.2f", a.getPrice())).append("/night)");
+                totalExtra += a.getPrice();
+            }
+            sb.append("  |  Extra cost: $").append(String.format("%.2f", totalExtra)).append("/night");
+            selectedExtrasLabel.setText(sb.toString());
+            selectedExtrasLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 13px;");
+        }
     }
 }

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -62,7 +60,6 @@
                             <Label text="Available Rooms" styleClass="section-header"/>
                             <Label fx:id="resultCountLabel" text="" style="-fx-text-fill: #94a3b8; -fx-font-size: 13px;"/>
                         </HBox>
-
                         <TableView fx:id="roomsTable" prefHeight="260">
                             <columns>
                                 <TableColumn fx:id="columnRoomNum" text="Room #" prefWidth="80"/>
@@ -76,11 +73,30 @@
                             </placeholder>
                         </TableView>
                     </VBox>
+                    <VBox spacing="12" styleClass="filter-card">
+                        <Label text="Extra Amenities (Optional)" style="-fx-text-fill: #f39c12; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                        <Label text="Select a room above, then add paid extras to your booking" styleClass="field-label-light"/>
+                        <HBox spacing="15" alignment="CENTER_LEFT">
+                            <VBox spacing="4">
+                                <Label text="Extra Amenity" styleClass="field-label-light"/>
+                                <ComboBox fx:id="extraAmenityCombo" promptText="Select extra amenity" prefWidth="260"/>
+                            </VBox>
+                            <VBox spacing="4" alignment="BOTTOM_LEFT">
+                                <Label text=" "/>
+                                <HBox spacing="8">
+                                    <Button text="Add Extra" onAction="#handleAddExtraAmenity"
+                                            styleClass="btn-success" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                    <Button text="Clear Extras" onAction="#handleClearExtras"
+                                            styleClass="btn-danger" style="-fx-font-size: 11px; -fx-padding: 6 14;"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        <Label fx:id="selectedExtrasLabel" text="No extras selected" style="-fx-text-fill: #94a3b8; -fx-font-size: 13px;" wrapText="true"/>
+                    </VBox>
                     <HBox alignment="CENTER">
                         <Button text="Book Selected Room" onAction="#handleBookRoom"
                                 styleClass="btn-success" prefWidth="220" prefHeight="44"/>
                     </HBox>
-
                 </VBox>
             </ScrollPane>
         </center>
