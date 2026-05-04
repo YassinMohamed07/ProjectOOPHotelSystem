@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -118,7 +117,64 @@
                         </VBox>
                     </ScrollPane>
                 </Tab>
+                <Tab text="  Register Staff  ">
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                        <VBox spacing="18" alignment="CENTER" style="-fx-padding: 20 30 30 30;">
+                            <Label text="Register New Staff Member" styleClass="section-header"/>
+
+                            <HBox spacing="20" alignment="CENTER">
+                                <VBox spacing="14" prefWidth="350">
+                                    <VBox spacing="4" alignment="CENTER_LEFT">
+                                        <Label text="Staff Username (3+ characters)" styleClass="field-label-light"/>
+                                        <TextField fx:id="staffRegUsername" promptText="Choose a username"/>
+                                    </VBox>
+
+                                    <VBox spacing="4" alignment="CENTER_LEFT">
+                                        <Label text="Password (8+ chars, upper, lower, digit, special)" styleClass="field-label-light"/>
+                                        <PasswordField fx:id="staffRegPassword" promptText="Create a strong password"/>
+                                    </VBox>
+
+                                    <VBox spacing="4" alignment="CENTER_LEFT">
+                                        <Label text="Date of Birth" styleClass="field-label-light"/>
+                                        <DatePicker fx:id="staffRegDob" promptText="Select date of birth" prefWidth="350"/>
+                                    </VBox>
+                                </VBox>
+
+                                <VBox spacing="14" prefWidth="350">
+                                    <VBox spacing="4" alignment="CENTER_LEFT">
+                                        <Label text="Role" styleClass="field-label-light"/>
+                                        <ComboBox fx:id="staffRegRole" promptText="Select role" prefWidth="350"/>
+                                    </VBox>
+
+                                    <VBox spacing="4" alignment="CENTER_LEFT">
+                                        <Label text="Working Hours" styleClass="field-label-light"/>
+                                        <TextField fx:id="staffRegHours" promptText="Enter working hours (e.g., 9)"/>
+                                    </VBox>
+
+                                    <VBox spacing="4" alignment="BOTTOM_LEFT">
+                                        <Label text=" "/>
+                                        <Button text="Register Staff" onAction="#handleStaffRegister"
+                                                prefWidth="260" prefHeight="42" styleClass="btn-success"/>
+                                    </VBox>
+                                </VBox>
+                            </HBox>
+                            <Label fx:id="staffRegStatusLabel" text="" wrapText="true" maxWidth="500"/>
+                            <Separator/>
+                            <Label text="All Staff Members" styleClass="section-header"/>
+                            <TableView fx:id="staffTable" prefHeight="200">
+                                <columns>
+                                    <TableColumn fx:id="colStaffUsername" text="Username" prefWidth="200"/>
+                                    <TableColumn fx:id="colStaffRole" text="Role" prefWidth="150"/>
+                                    <TableColumn fx:id="colStaffHours" text="Working Hours" prefWidth="150"/>
+                                    <TableColumn fx:id="colStaffDob" text="Date of Birth" prefWidth="150"/>
+                                </columns>
+                                <placeholder><Label text="No staff members" style="-fx-text-fill: rgba(255,255,255,0.4);"/></placeholder>
+                            </TableView>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
             </TabPane>
         </center>
     </BorderPane>
 </AnchorPane>
+

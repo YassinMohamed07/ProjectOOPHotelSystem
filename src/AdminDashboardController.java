@@ -5,12 +5,15 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import models.*;
 import database.HotelDatabase;
+import exceptions.*;
+import utils.ValidationUtil;
 import java.net.URL;
+import java.time.LocalDate;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 //Controller for the Admin Dashboard.
-//Implements room CRUD, amenity CRUD, and view-all operations.
+//Implements room CRUD, amenity CRUD, and view-all operations and Staff registration
 //References Admin class methods for business logic.
 public class AdminDashboardController implements Initializable, StaffAware {
 
@@ -43,10 +46,22 @@ public class AdminDashboardController implements Initializable, StaffAware {
     @FXML private TableColumn<Guest, String> colGuestAge;
     @FXML private TableColumn<Guest, String> colGuestBalance;
     @FXML private TableColumn<Guest, String> colGuestAddress;
-
     @FXML private TableView<RoomType> roomTypesTable;
     @FXML private TableColumn<RoomType, String> colRTName;
     @FXML private TableColumn<RoomType, String> colRTPrice;
+
+    // Staff Registration
+    @FXML private TextField staffRegUsername;
+    @FXML private PasswordField staffRegPassword;
+    @FXML private DatePicker staffRegDob;
+    @FXML private ComboBox<Role> staffRegRole;
+    @FXML private TextField staffRegHours;
+    @FXML private Label staffRegStatusLabel;
+    @FXML private TableView<Staff> staffTable;
+    @FXML private TableColumn<Staff, String> colStaffUsername;
+    @FXML private TableColumn<Staff, String> colStaffRole;
+    @FXML private TableColumn<Staff, String> colStaffHours;
+    @FXML private TableColumn<Staff, String> colStaffDob;
 
     private Staff currentStaff;
 
@@ -67,8 +82,16 @@ public class AdminDashboardController implements Initializable, StaffAware {
         colGuestAddress.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getAddress()));
         colRTName.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getTypeName()));
         colRTPrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getBasePrice())));
+        // Staff table columns
+        colStaffUsername.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
+        colStaffRole.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getRole().toString()));
+        colStaffHours.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getWorkingHours())));
+        colStaffDob.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDateOfBirth().toString()));
+        // Staff registration combo
+        staffRegRole.getItems().addAll(Role.values());
         roomStatusLabel.setText("");
         amenityStatusLabel.setText("");
+        staffRegStatusLabel.setText("");
     }
     @Override
     public void setStaff(Staff staff) {
@@ -209,11 +232,12 @@ public class AdminDashboardController implements Initializable, StaffAware {
     // View all / refresh
     @FXML
     private void handleRefreshAll() { refreshAll(); }
-    private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); }
-    private void refreshRooms() { roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms)); }
-    private void refreshAmenities() { amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities)); }
-    private void refreshGuests() { guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests)); }
-    private void refreshRoomTypes() { roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes)); }
+    private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); refreshStaff(); }
+    private void refreshRooms() { roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms)); roomsTable.refresh(); }
+    private void refreshAmenities() { amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities)); amenitiesTable.refresh(); }
+    private void refreshGuests() { guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests)); guestsTable.refresh(); }
+    private void refreshRoomTypes() { roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes)); roomTypesTable.refresh(); }
+    private void refreshStaff() { staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff)); staffTable.refresh(); }
     @FXML
     private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
 
@@ -224,5 +248,59 @@ public class AdminDashboardController implements Initializable, StaffAware {
     private void setAmenityStatus(String msg, boolean error) {
         amenityStatusLabel.setText(msg);
         amenityStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setStaffRegStatus(String msg, boolean error) {
+        staffRegStatusLabel.setText(msg);
+        staffRegStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+
+    //Handles staff registration — only accessible by authenticated Admin
+    @FXML
+    private void handleStaffRegister() {
+        String username = staffRegUsername.getText().trim();
+        String password = staffRegPassword.getText();
+        LocalDate dob = staffRegDob.getValue();
+        Role role = staffRegRole.getValue();
+        String hoursStr = staffRegHours.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty() || dob == null || role == null || hoursStr.isEmpty()) {
+            setStaffRegStatus("Please fill in all fields.", true);
+            return;
+        }
+        int hours;
+        try {
+            hours = Integer.parseInt(hoursStr);
+            if (hours <= 0) {
+                setStaffRegStatus("Working hours must be positive.", true);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            setStaffRegStatus("Invalid working hours. Enter a number.", true);
+            return;
+        }
+        try {
+            // Validate using ValidationUtil (same as Admin.registerStaff)
+            ValidationUtil.validateUsername(username);
+            ValidationUtil.validateDateOfBirth(dob);
+            ValidationUtil.validatePassword(password);
+
+            if (role == Role.ADMIN) {
+                HotelDatabase.staff.add(new Admin(username, password, dob, hours));
+            } else {
+                HotelDatabase.staff.add(new Receptionist(username, password, dob, hours));
+            }
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Staff Registration Successful");
+            alert.setHeaderText(role + ": " + username + " registered!");
+            alert.setContentText("The staff member can now login.");
+            alert.showAndWait();
+            setStaffRegStatus("Staff registered successfully!", false);
+            staffRegUsername.clear(); staffRegPassword.clear();
+            staffRegDob.setValue(null); staffRegRole.setValue(null); staffRegHours.clear();
+            refreshStaff();
+
+        } catch (WeakPwordException | InvalidDateException e) {
+            setStaffRegStatus(e.getMessage(), true);
+        }
     }
 }
