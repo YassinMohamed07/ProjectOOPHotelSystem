@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
-import models.Amenity;
 
 //Controller for the Room Browsing screen.
 //Allows guests to search/filter available rooms and book them.
@@ -35,7 +34,6 @@ public class RoomBrowsingController implements Initializable, GuestAware {
     @FXML private TableColumn<Room, String> columnTotalPrice;
 
     private Guest currentGuest;
-    private List<CheckBox> amenityCheckBoxes = new ArrayList<>();
 
     // Extra Amenities
     @FXML private ComboBox<String> extraAmenityCombo;
@@ -51,12 +49,10 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         }
         filterRoomType.setValue("All Types");
 
-        // Set up amenity checkboxes dynamically from database
-        for (Amenity amenity : HotelDatabase.allAmenities) {
-            CheckBox cb = new CheckBox(amenity.getName());
-            amenityCheckBoxes.add(cb);
-            amenitiesPane.getChildren().add(cb);
-        }
+        // Listen for changes in Room Type to update the amenities display dynamically
+        filterRoomType.valueProperty().addListener((obs, oldVal, newVal) -> updateAmenitiesDisplay(newVal));
+        updateAmenitiesDisplay("All Types");
+
         // Set up table columns
         columnRoomNum.setCellValueFactory(data -> new SimpleStringProperty(
                 String.valueOf(data.getValue().getRoomNumber())));
@@ -80,11 +76,44 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             extraAmenityCombo.getItems().add(amenity.getName() + " ($" + String.format("%.2f", amenity.getPrice()) + ")");
         }
     }
+
     @Override
     public void setGuest(Guest guest) {
         this.currentGuest = guest;
         guestInfoLabel.setText("Logged in as: " + guest.getUsername());
     }
+
+    //Dynamically updates the Amenities pane to show what is included in the selected room type
+    private void updateAmenitiesDisplay(String roomType) {
+        amenitiesPane.getChildren().clear();
+
+        List<Amenity> toDisplay = new ArrayList<>();
+
+        if (roomType == null || roomType.equals("All Types")) {
+            Label placeholder = new Label("Select a Room Type to view its included amenities.");
+            placeholder.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic;");
+            amenitiesPane.getChildren().add(placeholder);
+            return;
+        }
+
+        if (roomType.equalsIgnoreCase("SINGLE")) {
+            toDisplay = HotelDatabase.singleDefaults;
+        } else if (roomType.equalsIgnoreCase("DOUBLE")) {
+            toDisplay = HotelDatabase.doubleDefaults;
+        } else if (roomType.equalsIgnoreCase("SUITE")) {
+            toDisplay = HotelDatabase.suiteDefaults;
+        }
+
+        for (Amenity amenity : toDisplay) {
+            CheckBox cb = new CheckBox(amenity.getName());
+            cb.setSelected(true); // Show as included
+            cb.setMouseTransparent(true); // Prevent user from unchecking it
+            cb.setFocusTraversable(false);
+            cb.setStyle("-fx-opacity: 1; -fx-text-fill: #f8fafc;"); // Keep text bright
+            amenitiesPane.getChildren().add(cb);
+        }
+    }
+
     //Handles the Search button — filters rooms based on criteria.
     @FXML
     private void handleSearch() {
@@ -124,21 +153,6 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         try {
             List<Room> results = Guest.searchAvailableRooms(checkIn, checkOut, selectedType, maxPrice);
 
-            // Apply amenity filter (additional client-side filtering)
-            List<String> selectedAmenities = new ArrayList<>();
-            for (CheckBox cb : amenityCheckBoxes) {
-                if (cb.isSelected()) {
-                    selectedAmenities.add(cb.getText());
-                }
-            }
-
-            if (!selectedAmenities.isEmpty()) {
-                results = results.stream().filter(room -> {
-                    List<String> roomAmenityNames = room.getAmenities().stream().map(Amenity::getName).collect(Collectors.toList());
-                    return roomAmenityNames.containsAll(selectedAmenities);
-                }).collect(Collectors.toList());
-            }
-
             // Update table
             ObservableList<Room> observableRooms = FXCollections.observableArrayList(results);
             roomsTable.setItems(observableRooms);
@@ -154,6 +168,7 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             showAlert(Alert.AlertType.ERROR, "Date Error", e.getMessage());
         }
     }
+
     //Clears all filter fields.
     @FXML
     private void handleClearFilters() {
@@ -161,16 +176,15 @@ public class RoomBrowsingController implements Initializable, GuestAware {
         filterMaxPrice.clear();
         filterCheckIn.setValue(null);
         filterCheckOut.setValue(null);
-        for (CheckBox cb : amenityCheckBoxes) {
-            cb.setSelected(false);
-        }
         roomsTable.getItems().clear();
         resultCountLabel.setText("");
+
         // Clear extra amenities selection
         selectedExtraAmenities.clear();
         extraAmenityCombo.setValue(null);
         updateSelectedExtrasLabel();
     }
+
     //Books the selected room for the current guest.
     @FXML
     private void handleBookRoom() {
@@ -230,6 +244,7 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             showAlert(Alert.AlertType.ERROR, "Booking Failed", e.getMessage());
         }
     }
+
     //Navigate back to the Guest Dashboard.
     @FXML
     private void handleBackToDashboard() {
