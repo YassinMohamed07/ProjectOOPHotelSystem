@@ -9,6 +9,9 @@ import models.Reservation;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
+import network.ChatClient;
+import javafx.application.Platform;
+
 
 public class GuestDashboardController implements Initializable, GuestAware {
 
@@ -26,6 +29,10 @@ public class GuestDashboardController implements Initializable, GuestAware {
     @FXML private TableColumn<Reservation, String> columnCheckOut;
     @FXML private TableColumn<Reservation, String> columnStatus;
     @FXML private TableColumn<Reservation, String> columnPaid;
+    @FXML private TextArea chatTextArea;
+    @FXML private TextField chatInputField;
+    private ChatClient chatClient;
+
 
     private Guest currentGuest;
 
@@ -43,6 +50,13 @@ public class GuestDashboardController implements Initializable, GuestAware {
     public void setGuest(Guest guest) {
         this.currentGuest = guest;
         populateDashboard();
+
+        // --- START CHAT CLIENT ---
+        chatClient = new ChatClient("localhost", 8080, message -> {
+            // Platform.runLater is required when updating UI from a background thread
+            Platform.runLater(() -> chatTextArea.appendText(message + "\n"));
+        });
+        chatTextArea.appendText("Connected to Hotel Chat.\n");
     }
 
     //Populates all dashboard fields with the current guest's data.
@@ -86,5 +100,19 @@ public class GuestDashboardController implements Initializable, GuestAware {
     @FXML
     private void handleLogout() {
         SceneNavigator.navigateTo("LoginRegister.fxml");
+    }
+    // --- CHAT SEND ACTION ---
+    @FXML
+    private void handleSendMessage() {
+        String text = chatInputField.getText().trim();
+        if (!text.isEmpty() && chatClient != null) {
+            // Format: "Username: Message"
+            String formattedMessage = currentGuest.getUsername() + ": " + text;
+            chatClient.sendMessage(formattedMessage);
+
+            // Show it on our own screen
+            chatTextArea.appendText("Me: " + text + "\n");
+            chatInputField.clear();
+        }
     }
 }

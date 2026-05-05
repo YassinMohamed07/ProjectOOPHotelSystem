@@ -1,16 +1,760 @@
-﻿import models.Guest;
+﻿import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.*;
+import database.HotelDatabase;
+import exceptions.*;
+import utils.ValidationUtil;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+
+//Controller for the Admin Dashboard.
+//Implements room CRUD, amenity CRUD, and view-all operations and Staff registration
+//References Admin class methods for business logic.
+public class AdminDashboardController implements Initializable, StaffAware {
+
+    @FXML private Label adminInfoLabel;
+
+    // Room Management
+    @FXML private TextField roomNumField;
+    @FXML private ComboBox<String> roomTypeCombo;
+    @FXML private ComboBox<String> roomAmenityCombo;
+    @FXML private TableView<Room> roomsTable;
+    @FXML private TableColumn<Room, String> colRoomNum;
+    @FXML private TableColumn<Room, String> colRoomTypeName;
+    @FXML private TableColumn<Room, String> colRoomBasePrice;
+    @FXML private TableColumn<Room, String> colRoomAmenities;
+    @FXML private TableColumn<Room, String> colRoomTotalPrice;
+    @FXML private Label roomStatusLabel;
+
+    // Amenity Management
+    @FXML private TextField amenityNameField;
+    @FXML private TextField amenityPriceField;
+    @FXML private TableView<Amenity> amenitiesTable;
+    @FXML private TableColumn<Amenity, String> colAmenityName;
+    @FXML private TableColumn<Amenity, String> colAmenityPrice;
+    @FXML private Label amenityStatusLabel;
+
+    // View All
+    @FXML private TableView<Guest> guestsTable;
+    @FXML private TableColumn<Guest, String> colGuestUsername;
+    @FXML private TableColumn<Guest, String> colGuestGender;
+    @FXML private TableColumn<Guest, String> colGuestAge;
+    @FXML private TableColumn<Guest, String> colGuestBalance;
+    @FXML private TableColumn<Guest, String> colGuestAddress;
+
+    @FXML private TableView<RoomType> roomTypesTable;
+    @FXML private TableColumn<RoomType, String> colRTName;
+    @FXML private TableColumn<RoomType, String> colRTPrice;
+
+    // Staff Registration
+    @FXML private TextField staffRegUsername;
+    @FXML private PasswordField staffRegPassword;
+    @FXML private DatePicker staffRegDob;
+    @FXML private ComboBox<Role> staffRegRole;
+    @FXML private TextField staffRegHours;
+    @FXML private Label staffRegStatusLabel;
+    @FXML private TableView<Staff> staffTable;
+    @FXML private TableColumn<Staff, String> colStaffUsername;
+    @FXML private TableColumn<Staff, String> colStaffRole;
+    @FXML private TableColumn<Staff, String> colStaffHours;
+    @FXML private TableColumn<Staff, String> colStaffDob;
+
+    private Staff currentStaff;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // Room table columns
+        colRoomNum.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getRoomNumber())));
+        colRoomTypeName.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getType().getTypeName()));
+        colRoomBasePrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getType().getBasePrice())));
+        colRoomAmenities.setCellValueFactory(d -> {String names = d.getValue().getAmenities().stream().map(Amenity::getName).collect(Collectors.joining(", "));return new SimpleStringProperty(names.isEmpty() ? "None" : names);});
+        colRoomTotalPrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().totalRoomPricePerOneNight())));
+        colAmenityName.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getName()));
+        colAmenityPrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getPrice())));
+        colGuestUsername.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
+        colGuestGender.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getGender().toString()));
+        colGuestAge.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getAge())));
+        colGuestBalance.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getBalance())));
+        colGuestAddress.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getAddress()));
+        colRTName.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getTypeName()));
+        colRTPrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getBasePrice())));
+        // Staff table columns
+        colStaffUsername.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
+        colStaffRole.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getRole().toString()));
+        colStaffHours.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getWorkingHours())));
+        colStaffDob.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDateOfBirth().toString()));
+        // Staff registration combo
+        staffRegRole.getItems().addAll(Role.values());
+        roomStatusLabel.setText("");
+        amenityStatusLabel.setText("");
+        staffRegStatusLabel.setText("");
+    }
+    @Override
+    public void setStaff(Staff staff) {
+        this.currentStaff = staff;
+        adminInfoLabel.setText("Admin: " + staff.getUsername());
+        populateCombos();
+        refreshAll();
+    }
+    private void populateCombos() {
+        roomTypeCombo.getItems().clear();
+        for (RoomType rt : HotelDatabase.roomTypes) {
+            roomTypeCombo.getItems().add(rt.getTypeName() + " ($" + rt.getBasePrice() + ")");
+        }
+        roomAmenityCombo.getItems().clear();
+        for (Amenity a : HotelDatabase.allAmenities) {
+            roomAmenityCombo.getItems().add(a.getName());
+        }
+    }
+    // Room Management (references Admin.addRoom, deleteRoom, updateRoom)
+    @FXML
+    private void handleAddRoom() {
+        String numStr = roomNumField.getText().trim();
+        if (numStr.isEmpty() || roomTypeCombo.getValue() == null) {
+            setRoomStatus("Please enter room number and select a type.", true);
+            return;
+        }
+        int roomNum;
+        try { roomNum = Integer.parseInt(numStr); }
+        catch (NumberFormatException e) { setRoomStatus("Room number must be a number.", true); return; }
+        for (Room r : HotelDatabase.rooms) {
+            if (r.getRoomNumber() == roomNum) {setRoomStatus("Room #" + roomNum + " already exists!", true); return;
+            }
+        }
+        int idx = roomTypeCombo.getSelectionModel().getSelectedIndex();
+        RoomType selectedType = HotelDatabase.roomTypes.get(idx);
+        Room newRoom = new Room(roomNum, selectedType);
+        HotelDatabase.rooms.add(newRoom);
+        setRoomStatus("Room #" + roomNum + " added as " + selectedType.getTypeName() + ".", false);
+        refreshRooms(); roomNumField.clear();
+    }
+    @FXML
+    private void handleUpdateRoomType() {
+        Room selected = roomsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setRoomStatus("Select a room from the table first.", true); return; }
+        if (roomTypeCombo.getValue() == null) { setRoomStatus("Select a new room type.", true); return; }
+
+        int idx = roomTypeCombo.getSelectionModel().getSelectedIndex();
+        RoomType newType = HotelDatabase.roomTypes.get(idx);
+        selected.setType(newType);
+        setRoomStatus("Room #" + selected.getRoomNumber() + " updated to " + newType.getTypeName() + ".", false);
+        refreshRooms();
+    }
+    @FXML
+    private void handleAddAmenityToRoom() {
+        Room selected = roomsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setRoomStatus("Select a room from the table first.", true); return; }
+        if (roomAmenityCombo.getValue() == null) { setRoomStatus("Select an amenity to add.", true); return; }
+
+        String amenityName = roomAmenityCombo.getValue();
+        // Check if already has this amenity
+        for (Amenity a : selected.getAmenities()) {
+            if (a.getName().equalsIgnoreCase(amenityName)) {setRoomStatus("Room already has " + amenityName + ".", true); return;
+            }
+        }
+        for (Amenity a : HotelDatabase.allAmenities) {
+            if (a.getName().equalsIgnoreCase(amenityName)) {
+                selected.addAmenity(a);
+                setRoomStatus(amenityName + " added to Room #" + selected.getRoomNumber() + ".", false);
+                refreshRooms(); return;
+            }
+        }
+    }
+    @FXML
+    private void handleDeleteRoom() {
+        Room selected = roomsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setRoomStatus("Select a room to delete.", true); return; }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete Room #" + selected.getRoomNumber() + "?");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                HotelDatabase.rooms.remove(selected);
+                setRoomStatus("Room #" + selected.getRoomNumber() + " deleted.", false);
+                refreshRooms();
+            }
+        });
+    }
+    // Amenity management (references Admin.addAmenity, updateAmenity, deleteAmenity) ===
+    @FXML
+    private void handleAddAmenity() {
+        String name = amenityNameField.getText().trim();
+        String priceStr = amenityPriceField.getText().trim();
+        if (name.isEmpty() || priceStr.isEmpty()) { setAmenityStatus("Enter name and price.", true); return; }
+
+        double price;
+        try { price = Double.parseDouble(priceStr); if (price < 0) { setAmenityStatus("Price cannot be negative.", true); return; } }
+        catch (NumberFormatException e) { setAmenityStatus("Invalid price.", true); return; }
+
+        for (Amenity a : HotelDatabase.allAmenities) {
+            if (a.getName().equalsIgnoreCase(name)) { setAmenityStatus("Amenity '" + name + "' already exists!", true); return; }
+        }
+        HotelDatabase.allAmenities.add(new Amenity(name, price));
+        setAmenityStatus("Amenity '" + name + "' added ($" + String.format("%.2f", price) + ").", false);
+        refreshAmenities(); populateCombos();
+        amenityNameField.clear(); amenityPriceField.clear();
+    }
+    @FXML
+    private void handleUpdateAmenity() {
+        Amenity selected = amenitiesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setAmenityStatus("Select an amenity from the table.", true); return; }
+        String priceStr = amenityPriceField.getText().trim();
+        if (priceStr.isEmpty()) { setAmenityStatus("Enter new price.", true); return; }
+
+        double newPrice;
+        try { newPrice = Double.parseDouble(priceStr); if (newPrice < 0) { setAmenityStatus("Price cannot be negative.", true); return; } }
+        catch (NumberFormatException e) { setAmenityStatus("Invalid price.", true); return; }
+
+        selected.setPrice(newPrice);
+        setAmenityStatus("'" + selected.getName() + "' price updated to $" + String.format("%.2f", newPrice) + ".", false);
+        refreshAmenities(); amenityPriceField.clear();
+    }
+    @FXML
+    private void handleDeleteAmenity() {
+        Amenity selected = amenitiesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setAmenityStatus("Select an amenity to delete.", true); return; }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete amenity '" + selected.getName() + "'?");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                HotelDatabase.allAmenities.remove(selected);
+                int affected = 0;
+                for (Room r : HotelDatabase.rooms) {
+                    if (r.getAmenities().remove(selected)) affected++;
+                }
+                setAmenityStatus("'" + selected.getName() + "' deleted. Removed from " + affected + " room(s).", false);
+                refreshAmenities(); populateCombos();
+            }
+        });
+    }
+    // View all / refresh
+    @FXML
+    private void handleRefreshAll() { refreshAll(); }
+    private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); refreshStaff(); }
+    private void refreshRooms() {
+        roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms));
+        roomsTable.refresh(); // Forces a UI redraw
+    }
+
+    private void refreshAmenities() {
+        amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities));
+        amenitiesTable.refresh();
+    }
+
+    private void refreshGuests() {
+        guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests));
+        guestsTable.refresh();
+    }
+
+    private void refreshRoomTypes() {
+        roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes));
+        roomTypesTable.refresh();
+    }
+
+    private void refreshStaff() {
+        staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff));
+        staffTable.refresh();
+    }
+    @FXML
+    private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
+
+    private void setRoomStatus(String msg, boolean error) {
+        roomStatusLabel.setText(msg);
+        roomStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setAmenityStatus(String msg, boolean error) {
+        amenityStatusLabel.setText(msg);
+        amenityStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setStaffRegStatus(String msg, boolean error) {
+        staffRegStatusLabel.setText(msg);
+        staffRegStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+
+    //Handles staff registration â€” only accessible by authenticated Admin
+    @FXML
+    private void handleStaffRegister() {
+        String username = staffRegUsername.getText().trim();
+        String password = staffRegPassword.getText();
+        LocalDate dob = staffRegDob.getValue();
+        Role role = staffRegRole.getValue();
+        String hoursStr = staffRegHours.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty() || dob == null || role == null || hoursStr.isEmpty()) {
+            setStaffRegStatus("Please fill in all fields.", true);
+            return;
+        }
+        int hours;
+        try {
+            hours = Integer.parseInt(hoursStr);
+            if (hours <= 0) {
+                setStaffRegStatus("Working hours must be positive.", true);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            setStaffRegStatus("Invalid working hours. Enter a number.", true);
+            return;
+        }
+        try {
+            // Validate using ValidationUtil (same as Admin.registerStaff)
+            ValidationUtil.validateUsername(username);
+            ValidationUtil.validateDateOfBirth(dob);
+            ValidationUtil.validatePassword(password);
+
+            if (role == Role.ADMIN) {
+                HotelDatabase.staff.add(new Admin(username, password, dob, hours));
+            } else {
+                HotelDatabase.staff.add(new Receptionist(username, password, dob, hours));
+            }
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Staff Registration Successful");
+            alert.setHeaderText(role + ": " + username + " registered!");
+            alert.setContentText("The staff member can now login.");
+            alert.showAndWait();
+            setStaffRegStatus("Staff registered successfully!", false);
+            staffRegUsername.clear(); staffRegPassword.clear();
+            staffRegDob.setValue(null); staffRegRole.setValue(null); staffRegHours.clear();
+            refreshStaff();
+
+        } catch (WeakPwordException | InvalidDateException e) {
+            setStaffRegStatus(e.getMessage(), true);
+        }
+    }
+}
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+
+//Controller for the Checkout & Payment screen.
+//Allows guests to select unpaid reservations, view invoices, choose
+//a payment method, and confirm payment.
+public class CheckoutController implements Initializable, GuestAware {
+
+    @FXML private Label balanceInfoLabel;
+    @FXML private TableView<Reservation> unpaidTable;
+    @FXML private TableColumn<Reservation, String> colRoomNum;
+    @FXML private TableColumn<Reservation, String> colRoomType;
+    @FXML private TableColumn<Reservation, String> colCheckIn;
+    @FXML private TableColumn<Reservation, String> colCheckOut;
+    @FXML private TableColumn<Reservation, String> colStatus;
+    @FXML private TableColumn<Reservation, String> colTotal;
+    @FXML private ComboBox<String> paymentMethodCombo;
+    @FXML private TextArea invoiceSummary;
+    @FXML private Label statusLabel;
+
+    private Guest currentGuest;
+    private Invoice currentInvoice;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // Set up table columns
+        colRoomNum.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getRoom().getRoomNumber())));
+        colRoomType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRoom().getType().getTypeName()));
+        colCheckIn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckInDate().toString()));
+        colCheckOut.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckOutDate().toString()));
+        colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReservationStatus().toString()));
+        colTotal.setCellValueFactory(data -> {Invoice invoice = data.getValue().getInvoice();
+            if (invoice != null) {
+                return new SimpleStringProperty("$" + String.format("%.2f", invoice.calculateTotal()));
+            }
+            return new SimpleStringProperty("N/A");
+        });
+        // Set up payment method dropdown
+        for (PaymentMethod method : PaymentMethod.values()) {
+            paymentMethodCombo.getItems().add(method.name());
+        }
+        statusLabel.setText("");
+    }
+    @Override
+    public void setGuest(Guest guest) {
+        this.currentGuest = guest;
+        updateBalanceLabel();
+        loadUnpaidReservations();
+    }
+    //Updates the balance display in the header.
+    private void updateBalanceLabel() {
+        balanceInfoLabel.setText("Balance: $" + String.format("%.2f", currentGuest.getBalance()));
+    }
+    //Loads only unpaid reservations into the table.
+    private void loadUnpaidReservations() {
+        List<Reservation> allReservations = currentGuest.viewReservations();
+        List<Reservation> unpaid = new ArrayList<>();
+
+        for (Reservation res : allReservations) {
+            if (!res.isPaid() && !res.isCancelled()) {
+                unpaid.add(res);
+            }
+        }
+        ObservableList<Reservation> observableUnpaid = FXCollections.observableArrayList(unpaid);
+
+        unpaidTable.setItems(observableUnpaid);
+        unpaidTable.refresh(); // <--- Add this line
+
+        if (unpaid.isEmpty()) {
+            statusLabel.setText("All reservations are paid. Nothing to checkout.");
+            statusLabel.getStyleClass().setAll("label", "status-success");
+        } else {
+            statusLabel.setText(unpaid.size() + " unpaid reservation(s).");
+            statusLabel.getStyleClass().setAll("label", "info-value-light");
+        }
+    }
+    //Generates and displays the invoice for the selected reservation.
+    @FXML
+    private void handleGenerateInvoice() {
+        Reservation selected = unpaidTable.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            showAlert(Alert.AlertType.WARNING, "No Selection",
+                    "Please select a reservation to generate an invoice.");
+            return;
+        }
+        // Generate or retrieve the invoice
+        Invoice invoice = selected.getInvoice();
+        if (invoice == null) {
+            invoice = new Invoice(selected);
+            selected.setInvoice(invoice);
+        }
+        // Set payment method if selected
+        String methodStr = paymentMethodCombo.getValue();
+        if (methodStr != null && !methodStr.isEmpty()) {
+            PaymentMethod method = PaymentMethod.valueOf(methodStr);
+            invoice.setPaymentmethod(method);
+        }
+        currentInvoice = invoice;
+
+        // Display the invoice summary
+        invoiceSummary.setText(invoice.toString());
+
+        statusLabel.setText("Invoice generated for Room #" + selected.getRoom().getRoomNumber());
+        statusLabel.getStyleClass().setAll("label", "status-success");
+    }
+    //Confirms payment for the current invoice.
+    @FXML
+    private void handleConfirmPayment() {
+        if (currentInvoice == null) {
+            showAlert(Alert.AlertType.WARNING, "No Invoice",
+                    "Please generate an invoice first by selecting a reservation\nand clicking 'Generate Invoice'.");
+            return;
+        }
+        // Validate payment method
+        String methodStr = paymentMethodCombo.getValue();
+        if (methodStr == null || methodStr.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "No Payment Method",
+                    "Please select a payment method.");
+            return;
+        }
+        Reservation reservation = currentInvoice.getReservation();
+
+        // Check if already paid
+        if (reservation.isPaid()) {
+            showAlert(Alert.AlertType.INFORMATION, "Already Paid",
+                    "This reservation has already been paid.");
+            return;
+        }
+        double total = currentInvoice.calculateTotal();
+
+        // Check balance
+        if (currentGuest.getBalance() < total) {
+            showAlert(Alert.AlertType.ERROR, "Insufficient Funds",
+                    "You do not have enough balance.\n\n"
+                            + "Total Due: $" + String.format("%.2f", total) + "\n"
+                            + "Your Balance: $" + String.format("%.2f", currentGuest.getBalance()));
+            return;
+        }
+        // Set payment method on invoice
+        PaymentMethod method = PaymentMethod.valueOf(methodStr);
+        currentInvoice.setPaymentmethod(method);
+
+        // Process the payment
+        boolean success = currentInvoice.processPayment(total);
+
+        if (success) {
+            // Deduct from guest balance
+            currentGuest.setBalance(currentGuest.getBalance() - total);
+
+            showAlert(Alert.AlertType.INFORMATION, "Payment Successful!",
+                    "Payment of $" + String.format("%.2f", total) + " processed successfully!\n\n"
+                            + "Payment Method: " + method + "\n"
+                            + "Remaining Balance: $" + String.format("%.2f", currentGuest.getBalance()));
+
+            // Refresh UI
+            updateBalanceLabel();
+            loadUnpaidReservations();
+            invoiceSummary.setText(currentInvoice.toString());
+            currentInvoice = null;
+
+            statusLabel.setText("Payment confirmed successfully!");
+            statusLabel.getStyleClass().setAll("label", "status-success");
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Payment Failed",
+                    "Payment processing failed. Please try again.");
+        }
+    }
+    //Navigate back to the Guest Dashboard.
+    @FXML
+    private void handleBackToDashboard() {
+        SceneNavigator.navigateTo("GuestDashboard.fxml", currentGuest);
+    }
+
+    //Helper to show alert dialogs.
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+}
+import models.Guest;
 //Interface for controllers that need to receive the currently logged-in Guest.
 
 public interface GuestAware {
     void setGuest(Guest guest);
 }
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.Guest;
+import models.Reservation;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+
+public class GuestDashboardController implements Initializable, GuestAware {
+
+    @FXML private Label welcomeLabel;
+    @FXML private Label profileUsername;
+    @FXML private Label profileGender;
+    @FXML private Label profileAge;
+    @FXML private Label profileAddress;
+    @FXML private Label profilePrefs;
+    @FXML private Label balanceLabel;
+    @FXML private TableView<Reservation> reservationsTable;
+    @FXML private TableColumn<Reservation, String> columnRoomNum;
+    @FXML private TableColumn<Reservation, String> columnRoomType;
+    @FXML private TableColumn<Reservation, String> columnCheckIn;
+    @FXML private TableColumn<Reservation, String> columnCheckOut;
+    @FXML private TableColumn<Reservation, String> columnStatus;
+    @FXML private TableColumn<Reservation, String> columnPaid;
+
+    private Guest currentGuest;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        columnRoomNum.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getRoom().getRoomNumber())));
+        columnRoomType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRoom().getType().getTypeName()));
+        columnCheckIn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckInDate().toString()));
+        columnCheckOut.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckOutDate().toString()));
+        columnStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReservationStatus().toString()));
+        columnPaid.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isPaid() ? "Yes" : "No"));
+    }
+
+    @Override
+    public void setGuest(Guest guest) {
+        this.currentGuest = guest;
+        populateDashboard();
+    }
+
+    //Populates all dashboard fields with the current guest's data.
+    private void populateDashboard() {
+        if (currentGuest == null) return;
+
+        welcomeLabel.setText("Welcome, " + currentGuest.getUsername());
+        profileUsername.setText(currentGuest.getUsername());
+        profileGender.setText(currentGuest.getGender().toString());
+        profileAge.setText(String.valueOf(currentGuest.getAge()));
+        profileAddress.setText(currentGuest.getAddress());
+        profilePrefs.setText(currentGuest.getRoomPreferences());
+        balanceLabel.setText("$" + String.format("%.2f", currentGuest.getBalance()));
+
+        refreshReservationsTable();
+    }
+
+    //Refreshes the reservations table with latest data.
+    private void refreshReservationsTable() {
+        List<Reservation> reservations = currentGuest.viewReservations();
+        ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
+
+        reservationsTable.setItems(observableReservations);
+        reservationsTable.refresh(); // <--- Add this line
+    }
+
+    //Navigate to Room Browsing screen.
+    @FXML
+    private void handleBrowseRooms() {
+        SceneNavigator.navigateTo("RoomBrowsing.fxml", currentGuest);
+    }
+    //Navigate to Reservation Management screen.
+    @FXML
+    private void handleMyReservations() {SceneNavigator.navigateTo("ReservationManagement.fxml", currentGuest);}
+    //Navigate to Checkout & Payment screen.
+    @FXML
+    private void handleCheckout() {
+        SceneNavigator.navigateTo("Checkout.fxml", currentGuest);
+    }
+    //Logout and return to Log-in/Register screen.
+    @FXML
+    private void handleLogout() {
+        SceneNavigator.navigateTo("LoginRegister.fxml");
+    }
+}
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.*;
+import exceptions.*;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.ResourceBundle;
+
+//Controller for the Login / Register screen.
+//Handles guest login, staff login, guest registration
+public class LoginRegisterController implements Initializable {
+
+    //Login Tab Fields
+    @FXML private TextField loginUsername;
+    @FXML private PasswordField loginPassword;
+    @FXML private TextField staffUsername;
+    @FXML private PasswordField staffPassword;
+    @FXML private Label loginStatusLabel;
+
+    //Guest Register Tab Fields
+    @FXML private TextField regUsername;
+    @FXML private PasswordField regPassword;
+    @FXML private DatePicker regDob;
+    @FXML private ComboBox<Gender> regGender;
+    @FXML private TextField regBalance;
+    @FXML private TextField regAddress;
+    @FXML private TextField regPreferences;
+    @FXML private Label registerStatusLabel;
+    @FXML private TabPane tabPane;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        regGender.getItems().addAll(Gender.values());
+        loginStatusLabel.setText("");
+        registerStatusLabel.setText("");
+    }
+    //Handles guest login button click.
+    @FXML
+    private void handleGuestLogin() {
+        String username = loginUsername.getText().trim();
+        String password = loginPassword.getText();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            loginStatusLabel.setText("Please enter both username and password.");
+            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        try {
+            Guest guest = Guest.login(username, password);
+            SceneNavigator.navigateTo("GuestDashboard.fxml", guest);
+        } catch (InvalidCredentialException e) {
+            loginStatusLabel.setText(e.getMessage());
+            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+        }
+    }
+    //Handles staff login
+    @FXML
+    private void handleStaffLogin() {
+        String username = staffUsername.getText().trim();
+        String password = staffPassword.getText();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            loginStatusLabel.setText("Please enter both staff username and password.");
+            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        try {
+            Staff staffMember = Staff.login(username, password);
+
+            // Navigate based on role
+            if (staffMember instanceof Admin) {
+                SceneNavigator.navigateToStaff("AdminDashboard.fxml", staffMember);
+            } else if (staffMember instanceof Receptionist) {
+                SceneNavigator.navigateToStaff("ReceptionistDashboard.fxml", staffMember);
+            }
+        } catch (InvalidCredentialException e) {
+            loginStatusLabel.setText(e.getMessage());
+            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+        }
+    }
+    //Handles new guest registration.
+    @FXML
+    private void handleRegister() {
+        String username = regUsername.getText().trim();
+        String password = regPassword.getText();
+        LocalDate dob = regDob.getValue();
+        Gender gender = regGender.getValue();
+        String balanceStr = regBalance.getText().trim();
+        String address = regAddress.getText().trim();
+        String preferences = regPreferences.getText().trim();
+
+        if (username.isEmpty() || password.isEmpty() || dob == null || gender == null
+                || balanceStr.isEmpty() || address.isEmpty()) {
+            registerStatusLabel.setText("Please fill in all required fields.");
+            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        double balance;
+        try {
+            balance = Double.parseDouble(balanceStr);
+            if (balance < 0) {
+                registerStatusLabel.setText("Balance cannot be negative.");
+                registerStatusLabel.getStyleClass().setAll("label", "status-error");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            registerStatusLabel.setText("Invalid balance amount. Enter a number.");
+            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+            return;
+        }
+        try {
+            Guest newGuest = Guest.register(username, password, dob, gender, balance, address, preferences);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Registration Successful");
+            alert.setHeaderText("Welcome, " + newGuest.getUsername() + "!");
+            alert.setContentText("Your account has been created. You can now login.");
+            alert.showAndWait();
+
+            registerStatusLabel.setText("Registration successful! Switch to Login tab.");
+            registerStatusLabel.getStyleClass().setAll("label", "status-success");
+
+            regUsername.clear(); regPassword.clear(); regDob.setValue(null);
+            regGender.setValue(null); regBalance.clear(); regAddress.clear(); regPreferences.clear();
+            tabPane.getSelectionModel().select(0);
+
+        } catch (WeakPwordException | InvalidDateException e) {
+            registerStatusLabel.setText(e.getMessage());
+            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+        }
+    }
+}
 import database.HotelDatabase;
 import exceptions.InvalidCredentialException;
 import exceptions.InvalidDateException;
 import exceptions.WeakPwordException;
-
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 import models.*;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -18,23 +762,27 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.ConsoleHandler;
 
-public  class Main  {
-//    public void start(Stage primaryStage) throws Exception {
-//
-//        Parent root = FXMLLoader.load(getClass().getResource("LoginRegister.fxml"));
-//        Scene scene = new Scene(root);
-//        Image icon = new Image("hotel.png");
-//        primaryStage.getIcons().add(icon);
-//        primaryStage.setTitle("Hotel Reservation System");
-//        primaryStage.setScene(scene);
-//        primaryStage.show();
-//    }
+public class Main extends Application {
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        StackPane rootPane = new StackPane();
+        SceneNavigator.setRootPane(rootPane);
+        Image icon = new Image("hotel.png");
+        Scene scene = new Scene(rootPane, 950, 700);
+        scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
+        primaryStage.setScene(scene);
+        primaryStage.getIcons().add(icon);
+        primaryStage.setTitle("Hotel Reservation System");
+        primaryStage.setScene(scene);
+        SceneNavigator.navigateTo("LoginRegister.fxml");
+        primaryStage.show();
+    }
 
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
-//        launch(args);
-       boolean exitt=false;
+        launch(args);
+        boolean exitt=false;
         Scanner input = new Scanner(System.in);
         System.out.println("--- Welcome to the Desktop Hotel Reservation System ---");
         while (!exitt) {
@@ -578,13 +1326,20 @@ adminRunning=false;
          System.out.println("Enter Gender (MAlE/FEMALE): ");
          String gen= input.next().toUpperCase();
          Gender gender=Gender.valueOf(gen);
-         try { Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
+         try {
+             if(balance<0){
+                 throw new Exception("Your balance cant be a negative number, Registration failed.");
+             }
+             Guest.register(username,pass,dateOfBirth,gender,balance,address,pref);
           regsucc=true;
           break;
          }
          catch (WeakPwordException e){
              System.out.println(e.getMessage());
          } catch (InvalidDateException e) {
+             System.out.println(e.getMessage());
+         }
+         catch (Exception e){
              System.out.println(e.getMessage());
          }
      }     break; }
@@ -614,6 +1369,788 @@ adminRunning=false;
         }
     }
 }
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.*;
+import database.HotelDatabase;
+import exceptions.InvalidCredentialException;
+import java.net.URL;
+import java.time.temporal.ChronoUnit;
+import java.util.ResourceBundle;
+
+//Controller for the Receptionist (Front Desk) Dashboard.
+//References Receptionist class methods for check-in, check-out,
+//status updates, payment processing, and view-all operations.
+public class ReceptionistDashboardController implements Initializable, StaffAware {
+    @FXML private Label staffInfoLabel;
+
+    // Reservations tab
+    @FXML private TableView<Reservation> reservationsTable;
+    @FXML private TableColumn<Reservation, String> colResGuest;
+    @FXML private TableColumn<Reservation, String> colResRoom;
+    @FXML private TableColumn<Reservation, String> colResCheckIn;
+    @FXML private TableColumn<Reservation, String> colResCheckOut;
+    @FXML private TableColumn<Reservation, String> colResStatus;
+    @FXML private TableColumn<Reservation, String> colResCheckedIn;
+    @FXML private TableColumn<Reservation, String> colResCheckedOut;
+    @FXML private TableColumn<Reservation, String> colResPaid;
+    @FXML private ComboBox<String> statusCombo;
+    @FXML private Label resStatusLabel;
+
+    // Invoices tab
+    @FXML private TableView<Invoice> invoicesTable;
+    @FXML private TableColumn<Invoice, String> colInvGuest;
+    @FXML private TableColumn<Invoice, String> colInvRoom;
+    @FXML private TableColumn<Invoice, String> colInvNights;
+    @FXML private TableColumn<Invoice, String> colInvTotal;
+    @FXML private TableColumn<Invoice, String> colInvPaid;
+    @FXML private TableColumn<Invoice, String> colInvMethod;
+    @FXML private TextArea invoiceDetailArea;
+    @FXML private Label invStatusLabel;
+
+    // View All tab
+    @FXML private TableView<Guest> guestsTable;
+    @FXML private TableColumn<Guest, String> colGuestName;
+    @FXML private TableColumn<Guest, String> colGuestGender;
+    @FXML private TableColumn<Guest, String> colGuestBal;
+    @FXML private TableView<Room> allRoomsTable;
+    @FXML private TableColumn<Room, String> colViewRoomNum;
+    @FXML private TableColumn<Room, String> colViewRoomType;
+    @FXML private TableColumn<Room, String> colViewRoomPrice;
+
+    private Receptionist receptionist;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // Reservation table columns
+        colResGuest.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getGuest().getUsername()));
+        colResRoom.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getRoom().getRoomNumber())));
+        colResCheckIn.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getCheckInDate().toString()));
+        colResCheckOut.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getCheckOutDate().toString()));
+        colResStatus.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getReservationStatus().toString()));
+        colResCheckedIn.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().isCheckedIn() ? "Yes" : "No"));
+        colResCheckedOut.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().isCheckedOut() ? "Yes" : "No"));
+        colResPaid.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().isPaid() ? "Yes" : "No"));
+
+        // Invoice table columns
+        colInvGuest.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getReservation().getGuest().getUsername()));
+        colInvRoom.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getReservation().getRoom().getRoomNumber())));
+        colInvNights.setCellValueFactory(d -> {
+            long nights = ChronoUnit.DAYS.between(d.getValue().getReservation().getCheckInDate(), d.getValue().getReservation().getCheckOutDate());
+            return new SimpleStringProperty(String.valueOf(nights));
+        });
+        colInvTotal.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().calculateTotal())));
+        colInvPaid.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getReservation().isPaid() ? "Yes" : "No"));
+        colInvMethod.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getPaymentmethod().toString()));
+
+        // View All columns
+        colGuestName.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getUsername()));
+        colGuestGender.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getGender().toString()));
+        colGuestBal.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().getBalance())));
+        colViewRoomNum.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getRoomNumber())));
+        colViewRoomType.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getType().getTypeName()));
+        colViewRoomPrice.setCellValueFactory(d -> new SimpleStringProperty("$" + String.format("%.2f", d.getValue().totalRoomPricePerOneNight())));
+
+        // Status combo
+        for (ReservationStatus s : ReservationStatus.values()) {
+            statusCombo.getItems().add(s.name());
+        }
+        resStatusLabel.setText("");
+        invStatusLabel.setText("");
+    }
+    @Override
+    public void setStaff(Staff staff) {
+        if (staff instanceof Receptionist) {
+            this.receptionist = (Receptionist) staff;
+        }
+        staffInfoLabel.setText("Receptionist: " + staff.getUsername());
+        refreshAll();
+    }
+    // Reservation operations (references Receptionist.checkIn, checkOut, updateReservationStatus)
+    @FXML
+    private void handleCheckIn() {
+        Reservation selected = reservationsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setResStatus("Select a reservation to check in.", true); return; }
+
+        if (selected.isCheckedIn()) { setResStatus("Guest already checked in.", true); return; }
+        if (selected.isCancelled()) { setResStatus("Cannot check in a cancelled reservation.", true); return; }
+
+        // Call Receptionist.checkIn directly
+        receptionist.checkIn(selected);
+
+        if (selected.isCheckedIn()) {
+            setResStatus("Check-in successful for " + selected.getGuest().getUsername() + " - Room #" + selected.getRoom().getRoomNumber(), false);
+        } else {
+            setResStatus("Check-in failed. Check dates.", true);
+        }
+        refreshReservations();
+    }
+    @FXML
+    private void handleCheckOut() {
+        Reservation selected = reservationsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setResStatus("Select a reservation to check out.", true); return; }
+        if (!selected.isCheckedIn()) { setResStatus("Guest not checked in yet.", true); return; }
+        if (selected.isCheckedOut()) { setResStatus("Guest already checked out.", true); return; }
+
+        // Call Receptionist.checkOut directly
+        Invoice invoice = receptionist.checkOut(selected);
+
+        if (invoice != null) {
+            setResStatus("Check-out successful for " + selected.getGuest().getUsername() + ". Invoice generated.", false);
+            refreshInvoices();
+        } else {
+            setResStatus("Check-out failed.", true);
+        }
+        refreshReservations();
+    }
+    @FXML
+    private void handleUpdateStatus() {
+        Reservation selected = reservationsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setResStatus("Select a reservation.", true); return; }
+        if (statusCombo.getValue() == null) { setResStatus("Select a status.", true); return; }
+
+        ReservationStatus newStatus = ReservationStatus.valueOf(statusCombo.getValue());
+        try {
+            receptionist.updateReservationStatus(selected, newStatus);
+            setResStatus("Status updated to " + newStatus + ".", false);
+            refreshReservations();
+        } catch (InvalidCredentialException e) {
+            setResStatus(e.getMessage(), true);
+        }
+    }
+    @FXML
+    private void handleFinalizeExpired() {
+        int count = receptionist.finalizeCompletedReservations();
+        setResStatus("Finalized " + count + " expired reservation(s).", false);
+        refreshReservations();
+        refreshInvoices();
+    }
+    @FXML
+    private void handleRefreshReservations() { refreshReservations(); }
+
+    // Invoice operations (references Receptionist.processCheckoutPayment)
+
+    @FXML
+    private void handleViewInvoice() {
+        Invoice selected = invoicesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setInvStatus("Select an invoice to view.", true); return; }
+        invoiceDetailArea.setText(selected.toString());
+        setInvStatus("Invoice displayed.", false);
+    }
+    @FXML
+    private void handleProcessPayment() {
+        Invoice selected = invoicesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { setInvStatus("Select an invoice to process payment.", true); return; }
+        if (selected.getReservation().isPaid()) {setInvStatus("This invoice is already paid.", true); return;
+        }
+        double total = selected.calculateTotal();
+        Guest guest = selected.getReservation().getGuest();
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Process Payment");
+        confirm.setHeaderText("Process payment of $" + String.format("%.2f", total) + "?");
+        confirm.setContentText("Guest: " + guest.getUsername() + "\nBalance: $" + String.format("%.2f", guest.getBalance()));
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                boolean success = receptionist.processCheckoutPayment(selected, total);
+                if (success) {
+                    setInvStatus("Payment of $" + String.format("%.2f", total) + " processed. New balance: $" + String.format("%.2f", guest.getBalance()), false);
+                    invoiceDetailArea.setText(selected.toString());
+                } else {
+                    setInvStatus("Payment failed. Insufficient funds.", true);
+                }
+                refreshInvoices();
+                refreshReservations();
+            }
+        });
+    }
+    @FXML
+    private void handleRefreshInvoices() { refreshInvoices(); }
+    @FXML
+    private void handleRefreshViewAll() { refreshGuests(); refreshRooms(); }
+
+    // refresh
+    private void refreshAll() { refreshReservations(); refreshInvoices(); refreshGuests(); refreshRooms(); }
+    private void refreshReservations() {
+        reservationsTable.setItems(FXCollections.observableArrayList(HotelDatabase.reservations));
+        reservationsTable.refresh();
+    }
+
+    private void refreshInvoices() {
+        invoicesTable.setItems(FXCollections.observableArrayList(HotelDatabase.invoices));
+        invoicesTable.refresh();
+    }
+
+    private void refreshGuests() {
+        guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests));
+        guestsTable.refresh();
+    }
+
+    private void refreshRooms() {
+        allRoomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms));
+        allRoomsTable.refresh();
+    }
+
+    @FXML
+    private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
+
+    private void setResStatus(String msg, boolean error) {
+        resStatusLabel.setText(msg);
+        resStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setInvStatus(String msg, boolean error) {
+        invStatusLabel.setText(msg);
+        invStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+}
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import models.Guest;
+import models.Invoice;
+import models.Reservation;
+import exceptions.InvalidCredentialException;
+import java.net.URL;
+import java.util.List;
+import java.util.Optional;
+import java.util.ResourceBundle;
+
+//Controller for the Reservation Management screen.
+//Allows guests to view their booking history and cancel reservations.
+public class ReservationController implements Initializable, GuestAware {
+
+    @FXML private Label guestInfoLabel;
+    @FXML private TableView<Reservation> reservationsTable;
+    @FXML private TableColumn<Reservation, String> colRoomNum;
+    @FXML private TableColumn<Reservation, String> colRoomType;
+    @FXML private TableColumn<Reservation, String> colCheckIn;
+    @FXML private TableColumn<Reservation, String> colCheckOut;
+    @FXML private TableColumn<Reservation, String> colStatus;
+    @FXML private TableColumn<Reservation, String> colPaid;
+    @FXML private TableColumn<Reservation, String> colTotal;
+    @FXML private Label statusLabel;
+
+    private Guest currentGuest;
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // Set up table columns
+        colRoomNum.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getRoom().getRoomNumber())));
+        colRoomType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRoom().getType().getTypeName()));
+        colCheckIn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckInDate().toString()));
+        colCheckOut.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckOutDate().toString()));
+        colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReservationStatus().toString()));
+        colPaid.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isPaid() ? "Yes" : "No"));
+        colTotal.setCellValueFactory(data -> {Invoice invoice = data.getValue().getInvoice();
+            if (invoice != null) {
+                return new SimpleStringProperty("$" + String.format("%.2f", invoice.calculateTotal()));
+            }
+            return new SimpleStringProperty("N/A");
+        });
+        statusLabel.setText("");
+    }
+    @Override
+    public void setGuest(Guest guest) {
+        this.currentGuest = guest;
+        guestInfoLabel.setText("Logged in as: " + guest.getUsername());
+        refreshTable();
+    }
+    //Refreshes the reservations table with the latest data.
+    private void refreshTable() {
+        List<Reservation> reservations = currentGuest.viewReservations();
+        ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
+
+        reservationsTable.setItems(observableReservations);
+        reservationsTable.refresh(); // <--- Add this line
+
+        if (reservations.isEmpty()) {
+            statusLabel.setText("You have no reservations.");
+            statusLabel.getStyleClass().setAll("label", "status-error");
+        } else {
+            statusLabel.setText(reservations.size() + " reservation(s) found.");
+            statusLabel.getStyleClass().setAll("label", "status-success");
+        }
+    }
+    @FXML
+    private void handleRefresh() {
+        refreshTable();
+    }
+
+    //Handles cancellation of the selected reservation.
+    @FXML
+    private void handleCancelReservation() {
+        Reservation selected = reservationsTable.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            showAlert(Alert.AlertType.WARNING, "No Selection",
+                    "Please select a reservation from the table to cancel.");
+            return;
+        }
+        // Check if already cancelled
+        if (selected.isCancelled()) {
+            showAlert(Alert.AlertType.INFORMATION, "Already Cancelled",
+                    "This reservation has already been cancelled.");
+            return;
+        }
+        // Check if already paid
+        if (selected.isPaid()) {
+            showAlert(Alert.AlertType.WARNING, "Cannot Cancel",
+                    "This reservation has already been paid and cannot be cancelled.");
+            return;
+        }
+        // Confirmation dialog
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Cancellation");
+        confirmAlert.setHeaderText("Cancel Reservation?");
+        confirmAlert.setContentText("Are you sure you want to cancel your reservation for Room #" + selected.getRoom().getRoomNumber() + "?\n"
+                + "Check-in: " + selected.getCheckInDate() + "\n"
+                + "Check-out: " + selected.getCheckOutDate());
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                currentGuest.cancelReservation(selected);
+                showAlert(Alert.AlertType.INFORMATION, "Cancellation Successful",
+                        "Reservation for Room #" + selected.getRoom().getRoomNumber()
+                                + " has been cancelled.");
+                refreshTable();
+            } catch (InvalidCredentialException e) {
+                showAlert(Alert.AlertType.ERROR, "Cancellation Failed", e.getMessage());
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Cancellation Failed", e.getMessage());
+            }
+        }
+    }
+    //Navigate to Browse Rooms screen.
+    @FXML
+    private void handleBrowseRooms() {
+        SceneNavigator.navigateTo("RoomBrowsing.fxml", currentGuest);
+    }
+
+    //Navigate back to the Guest Dashboard.
+    @FXML
+    private void handleBackToDashboard() {
+        SceneNavigator.navigateTo("GuestDashboard.fxml", currentGuest);
+    }
+
+    //Helper to show alert dialogs.
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+}
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import javafx.scene.layout.FlowPane;
+import models.*;
+import database.HotelDatabase;
+import exceptions.InvalidDateException;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+
+//Controller for the Room Browsing screen.
+//Allows guests to search/filter available rooms and book them.
+public class RoomBrowsingController implements Initializable, GuestAware {
+
+    @FXML private Label guestInfoLabel;
+    @FXML private ComboBox<String> filterRoomType;
+    @FXML private TextField filterMaxPrice;
+    @FXML private DatePicker filterCheckIn;
+    @FXML private DatePicker filterCheckOut;
+    @FXML private FlowPane amenitiesPane;
+    @FXML private Label resultCountLabel;
+    @FXML private TableView<Room> roomsTable;
+    @FXML private TableColumn<Room, String> columnRoomNum;
+    @FXML private TableColumn<Room, String> columnRoomType;
+    @FXML private TableColumn<Room, String> columnBasePrice;
+    @FXML private TableColumn<Room, String> columnAmenities;
+    @FXML private TableColumn<Room, String> columnTotalPrice;
+
+    private Guest currentGuest;
+
+    // Extra Amenities
+    @FXML private ComboBox<String> extraAmenityCombo;
+    @FXML private Label selectedExtrasLabel;
+    private List<Amenity> selectedExtraAmenities = new ArrayList<>();
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // Set up room type filter options
+        filterRoomType.getItems().add("All Types");
+        for (Roomtypee type : Roomtypee.values()) {
+            filterRoomType.getItems().add(type.name());
+        }
+        filterRoomType.setValue("All Types");
+
+        // Listen for changes in Room Type to update the amenities display dynamically
+        filterRoomType.valueProperty().addListener((obs, oldVal, newVal) -> updateAmenitiesDisplay(newVal));
+        updateAmenitiesDisplay("All Types");
+
+        // Set up table columns
+        columnRoomNum.setCellValueFactory(data -> new SimpleStringProperty(
+                String.valueOf(data.getValue().getRoomNumber())));
+        columnRoomType.setCellValueFactory(data -> new SimpleStringProperty(
+                data.getValue().getType().getTypeName()));
+        columnBasePrice.setCellValueFactory(data -> new SimpleStringProperty(
+                "$" + String.format("%.2f", data.getValue().getType().getBasePrice())));
+        columnAmenities.setCellValueFactory(data -> {
+            ArrayList<Amenity> amenities = data.getValue().getAmenities();
+            if (amenities.isEmpty()) return new SimpleStringProperty("None");
+            String names = amenities.stream()
+                    .map(Amenity::getName)
+                    .collect(Collectors.joining(", "));
+            return new SimpleStringProperty(names);
+        });
+        columnTotalPrice.setCellValueFactory(data -> new SimpleStringProperty(
+                "$" + String.format("%.2f", data.getValue().totalRoomPricePerOneNight())));
+
+        // Populate Extra Amenities combo from the database's paid extras list
+        for (Amenity amenity : HotelDatabase.extraAmenities) {
+            extraAmenityCombo.getItems().add(amenity.getName() + " ($" + String.format("%.2f", amenity.getPrice()) + ")");
+        }
+    }
+
+    @Override
+    public void setGuest(Guest guest) {
+        this.currentGuest = guest;
+        guestInfoLabel.setText("Logged in as: " + guest.getUsername());
+    }
+
+    //Dynamically updates the Amenities pane to show what is included in the selected room type
+    private void updateAmenitiesDisplay(String roomType) {
+        amenitiesPane.getChildren().clear();
+
+        List<Amenity> toDisplay = new ArrayList<>();
+
+        if (roomType == null || roomType.equals("All Types")) {
+            Label placeholder = new Label("Select a Room Type to view its included amenities.");
+            placeholder.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic;");
+            amenitiesPane.getChildren().add(placeholder);
+            return;
+        }
+
+        if (roomType.equalsIgnoreCase("SINGLE")) {
+            toDisplay = HotelDatabase.singleDefaults;
+        } else if (roomType.equalsIgnoreCase("DOUBLE")) {
+            toDisplay = HotelDatabase.doubleDefaults;
+        } else if (roomType.equalsIgnoreCase("SUITE")) {
+            toDisplay = HotelDatabase.suiteDefaults;
+        }
+
+        for (Amenity amenity : toDisplay) {
+            CheckBox cb = new CheckBox(amenity.getName());
+            cb.setSelected(true); // Show as included
+            cb.setMouseTransparent(true); // Prevent user from unchecking it
+            cb.setFocusTraversable(false);
+            cb.setStyle("-fx-opacity: 1; -fx-text-fill: #f8fafc;"); // Keep text bright
+            amenitiesPane.getChildren().add(cb);
+        }
+    }
+
+    //Handles the Search button â€” filters rooms based on criteria.
+    @FXML
+    private void handleSearch() {
+        // Validate dates are provided
+        LocalDate checkIn = filterCheckIn.getValue();
+        LocalDate checkOut = filterCheckOut.getValue();
+
+        if (checkIn == null || checkOut == null) {
+            showAlert(Alert.AlertType.WARNING, "Missing Dates",
+                    "Please select both check-in and check-out dates.");
+            return;
+        }
+        // Parse max price
+        double maxPrice = 0;
+        String priceText = filterMaxPrice.getText().trim();
+        if (!priceText.isEmpty()) {
+            try {
+                maxPrice = Double.parseDouble(priceText);
+                if (maxPrice < 0) {
+                    showAlert(Alert.AlertType.WARNING, "Invalid Price",
+                            "Max price cannot be negative.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.WARNING, "Invalid Price",
+                        "Please enter a valid number for max price.");
+                return;
+            }
+        }
+        // Determine room type filter
+        String selectedType = null;
+        String typeStr = filterRoomType.getValue();
+        if (typeStr != null && !typeStr.equals("All Types")) {
+            selectedType = typeStr;
+        }
+        // Search using the Guest model's existing method
+        try {
+            List<Room> results = Guest.searchAvailableRooms(checkIn, checkOut, selectedType, maxPrice);
+
+            // Update table
+            ObservableList<Room> observableRooms = FXCollections.observableArrayList(results);
+            roomsTable.setItems(observableRooms);
+
+            // Update result count
+            if (results.isEmpty()) {
+                resultCountLabel.setText("No rooms found matching your criteria.");
+            } else {
+                resultCountLabel.setText(results.size() + " room(s) found");
+            }
+
+        } catch (InvalidDateException e) {
+            showAlert(Alert.AlertType.ERROR, "Date Error", e.getMessage());
+        }
+    }
+
+    //Clears all filter fields.
+    @FXML
+    private void handleClearFilters() {
+        filterRoomType.setValue("All Types");
+        filterMaxPrice.clear();
+        filterCheckIn.setValue(null);
+        filterCheckOut.setValue(null);
+        roomsTable.getItems().clear();
+        resultCountLabel.setText("");
+
+        // Clear extra amenities selection
+        selectedExtraAmenities.clear();
+        extraAmenityCombo.setValue(null);
+        updateSelectedExtrasLabel();
+    }
+
+    //Books the selected room for the current guest.
+    @FXML
+    private void handleBookRoom() {
+        Room selectedRoom = roomsTable.getSelectionModel().getSelectedItem();
+        if (selectedRoom == null) {
+            showAlert(Alert.AlertType.WARNING, "No Room Selected",
+                    "Please select a room from the table to book.");
+            return;
+        }
+        LocalDate checkIn = filterCheckIn.getValue();
+        LocalDate checkOut = filterCheckOut.getValue();
+
+        if (checkIn == null || checkOut == null) {
+            showAlert(Alert.AlertType.WARNING, "Missing Dates",
+                    "Check-in and check-out dates are required to book.");
+            return;
+        }
+        try {
+            // Create the reservation using the Guest model's method
+            Reservation newRes = currentGuest.makeReservation(selectedRoom, checkIn, checkOut);
+
+            // Add selected extra amenities to the reservation
+            for (Amenity extra : selectedExtraAmenities) {
+                newRes.addChosenAmenity(extra);
+            }
+
+            // Generate invoice immediately (it will include the extras via calculateTotal)
+            Invoice inv = new Invoice(newRes);
+            newRes.setInvoice(inv);
+
+            double totalEstimate = inv.calculateTotal();
+
+            // Build extras summary for the confirmation message
+            String extrasSummary = "";
+            if (!selectedExtraAmenities.isEmpty()) {
+                extrasSummary = "\nExtras: " + selectedExtraAmenities.stream()
+                        .map(Amenity::getName)
+                        .collect(Collectors.joining(", "));
+            }
+
+            showAlert(Alert.AlertType.INFORMATION, "Booking Successful!",
+                    "Room #" + selectedRoom.getRoomNumber() + " has been reserved!\n\n"
+                            + "Check-in: " + checkIn + "\n"
+                            + "Check-out: " + checkOut
+                            + extrasSummary + "\n"
+                            + "Estimated Total (incl. tax): $" + String.format("%.2f", totalEstimate));
+
+            // Clear extras after booking
+            selectedExtraAmenities.clear();
+            extraAmenityCombo.setValue(null);
+            updateSelectedExtrasLabel();
+
+            // Refresh the search to remove the now-booked room
+            handleSearch();
+
+        } catch (InvalidDateException e) {
+            showAlert(Alert.AlertType.ERROR, "Booking Failed", e.getMessage());
+        }
+    }
+
+    //Navigate back to the Guest Dashboard.
+    @FXML
+    private void handleBackToDashboard() {
+        SceneNavigator.navigateTo("GuestDashboard.fxml", currentGuest);
+    }
+
+    //Helper to show alert dialogs.
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+    //Handles adding an extra amenity to the booking
+    @FXML
+    private void handleAddExtraAmenity() {
+        Room selectedRoom = roomsTable.getSelectionModel().getSelectedItem();
+        if (selectedRoom == null) {
+            showAlert(Alert.AlertType.WARNING, "No Room Selected",
+                    "Please select a room from the table first, then add extras.");
+            return;
+        }
+        if (extraAmenityCombo.getValue() == null) {
+            showAlert(Alert.AlertType.WARNING, "No Amenity Selected",
+                    "Please select an extra amenity from the dropdown.");
+            return;
+        }
+        int idx = extraAmenityCombo.getSelectionModel().getSelectedIndex();
+        Amenity selectedAmenity = HotelDatabase.extraAmenities.get(idx);
+
+        // Check for duplicates in selected extras
+        for (Amenity a : selectedExtraAmenities) {
+            if (a.getName().equalsIgnoreCase(selectedAmenity.getName())) {
+                showAlert(Alert.AlertType.INFORMATION, "Already Added",
+                        "'" + selectedAmenity.getName() + "' is already in your extras list.");
+                return;
+            }
+        }
+        // Check if room already has this amenity as a default
+        for (Amenity a : selectedRoom.getAmenities()) {
+            if (a.getName().equalsIgnoreCase(selectedAmenity.getName())) {
+                showAlert(Alert.AlertType.INFORMATION, "Already Included",
+                        "'" + selectedAmenity.getName() + "' is already included with this room.");
+                return;
+            }
+        }
+
+        selectedExtraAmenities.add(selectedAmenity);
+        updateSelectedExtrasLabel();
+    }
+
+    //Handles clearing all selected extra amenities
+    @FXML
+    private void handleClearExtras() {
+        selectedExtraAmenities.clear();
+        extraAmenityCombo.setValue(null);
+        updateSelectedExtrasLabel();
+    }
+
+    //Updates the label showing currently selected extra amenities
+    private void updateSelectedExtrasLabel() {
+        if (selectedExtraAmenities.isEmpty()) {
+            selectedExtrasLabel.setText("No extras selected");
+            selectedExtrasLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 13px;");
+        } else {
+            double totalExtra = 0;
+            StringBuilder sb = new StringBuilder("Selected: ");
+            for (int i = 0; i < selectedExtraAmenities.size(); i++) {
+                Amenity a = selectedExtraAmenities.get(i);
+                if (i > 0) sb.append(", ");
+                sb.append(a.getName()).append(" ($").append(String.format("%.2f", a.getPrice())).append("/night)");
+                totalExtra += a.getPrice();
+            }
+            sb.append("  |  Extra cost: $").append(String.format("%.2f", totalExtra)).append("/night");
+            selectedExtrasLabel.setText(sb.toString());
+            selectedExtrasLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 13px;");
+        }
+    }
+}
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.Alert;
+import javafx.scene.layout.StackPane;
+import models.Guest;
+import models.Staff;
+import java.net.URL;
+
+//Utility class for navigating between screens using a shared StackPane root.
+//Controllers that need to receive the logged-in Guest must implement GuestAware.
+//Controllers that need to receive the logged-in Staff must implement StaffAware.
+
+public class SceneNavigator {
+
+    private static StackPane rootPane;
+
+    public static void setRootPane(StackPane pane) {
+        rootPane = pane;
+    }
+
+    //Navigate to a screen without passing data.
+    public static void navigateTo(String fxmlFile) {
+        loadAndShow(fxmlFile, null, null);
+    }
+
+    //Navigate to a screen and pass the logged-in Guest to the controller.
+    public static void navigateTo(String fxmlFile, Guest guest) {
+        loadAndShow(fxmlFile, guest, null);
+    }
+
+    //Navigate to a screen and pass the logged-in Staff to the controller.
+    public static void navigateToStaff(String fxmlFile, Staff staff) {
+        loadAndShow(fxmlFile, null, staff);
+    }
+
+    //Core loading method that handles both Guest and Staff navigation.
+    private static void loadAndShow(String fxmlFile, Guest guest, Staff staff) {
+        try {
+            URL fxmlUrl = SceneNavigator.class.getResource(fxmlFile);
+            if (fxmlUrl == null) {
+                System.err.println("ERROR: FXML file not found in classpath: " + fxmlFile);
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Navigation Error");
+                alert.setHeaderText("Screen not found");
+                alert.setContentText("Could not find: " + fxmlFile + "\nPlease rebuild the project (Build > Rebuild Project).");
+                alert.showAndWait();
+                return;
+            }
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent view = loader.load();
+            Object controller = loader.getController();
+
+            // Pass Guest if provided
+            if (guest != null && controller instanceof GuestAware) {
+                ((GuestAware) controller).setGuest(guest);
+            }
+
+            // Pass Staff if provided
+            if (staff != null && controller instanceof StaffAware) {
+                ((StaffAware) controller).setStaff(staff);
+            }
+
+            rootPane.getChildren().setAll(view);
+
+        } catch (Exception e) {
+            System.err.println("Failed to load FXML: " + fxmlFile);
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Navigation Error");
+            alert.setHeaderText("Failed to load screen: " + fxmlFile);
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+    }
+}
 import models.Staff;
 //Interface for controllers that need to receive the currently logged-in Staff member.
 
@@ -639,6 +2176,7 @@ public class HotelDatabase {
    public static  ArrayList<Amenity> singleDefaults = new ArrayList<>();
     public static ArrayList<Amenity> doubleDefaults= new ArrayList<>();
    public static  ArrayList<Amenity> suiteDefaults = new ArrayList<>();
+   public static ArrayList<Amenity> extraAmenities=new ArrayList<>();
     public static void initialize() throws InvalidDateException, WeakPwordException {
         // --- 1. DEFINE STANDARD AMENITIES (Price = 0.0) ---
         Amenity basicWifi = new Amenity("Basic Wi-Fi", 0.0);
@@ -663,6 +2201,24 @@ public class HotelDatabase {
         Amenity airportTransfer = new Amenity("Airport Limousine Transfer", 80.0);
         Amenity champagne = new Amenity("Champagne & Fruit Platter", 50.0);
         Amenity laundry = new Amenity("Same-Day Laundry Service", 40.0);
+extraAmenities.add(fiberWifi);
+        extraAmenities.add(lateCheckout);
+        extraAmenities.add(spaAccess);
+        extraAmenities.add(parking);
+        extraAmenities.add(sportsChannels);
+        extraAmenities.add(streaming);
+        extraAmenities.add(massage);
+        extraAmenities.add(airportTransfer);
+        extraAmenities.add(champagne);
+        extraAmenities.add(laundry);
+
+
+
+
+
+
+
+
 
         // Add ALL to the master database list so the system recognizes them
         allAmenities.add(basicWifi);
@@ -1584,34 +3140,27 @@ import java.util.ArrayList;
 
 public class Invoice implements Payable {
 
-        private Reservation reservation;
-        private LocalDate checkInDate;
-        private LocalDate checkOutDate;
-        private PaymentMethod paymentmethod = PaymentMethod.CASH;
-        private final LocalDate transactionDate = LocalDate.now();
+    private Reservation reservation;
+    private LocalDate checkInDate;
+    private LocalDate checkOutDate;
+    private PaymentMethod paymentmethod = PaymentMethod.CASH;
+    private final LocalDate transactionDate = LocalDate.now();
 
-        // Move these declarations here, but DON'T initialize them yet
-        private long numberOfNights;
-        private double roomPricePerOneNight;
+    private long numberOfNights;
+    private double roomPricePerOneNight;
 
-        public Invoice(Reservation reservation) {
-            if (reservation == null) {
-                throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");
-            }
-
-
-            this.reservation = reservation;
-
-
-            this.checkInDate = reservation.getCheckInDate();
-            this.checkOutDate = reservation.getCheckOutDate();
-
-
-            this.numberOfNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
-            this.roomPricePerOneNight = reservation.getRoom().totalRoomPricePerOneNight();
+    public Invoice(Reservation reservation) {
+        if (reservation == null) {
+            throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");
         }
 
-        // ... rest of your methods (calculateTotal, processPayment, etc.)
+        this.reservation = reservation;
+        this.checkInDate = reservation.getCheckInDate();
+        this.checkOutDate = reservation.getCheckOutDate();
+
+        this.numberOfNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+        this.roomPricePerOneNight = reservation.getRoom().totalRoomPricePerOneNight();
+    }
 
     @Override
     public double calculateTotal() {
@@ -1631,23 +3180,28 @@ public class Invoice implements Payable {
         // 4. Final Total with 14% Tax
         return subtotal * 1.14;
     }
-public boolean processPayment(double amountPaid){
-        if(amountPaid>=calculateTotal()){
+
+    public boolean processPayment(double amountPaid){
+        if(amountPaid >= calculateTotal()){
             reservation.setPaid(true);
             reservation.setReservationStatus(ReservationStatus.CONFIRMED);
             return true;
-
         }
 
         reservation.setReservationStatus(ReservationStatus.PENDING);
         return false;
+    }
 
-}
     @Override
     public String toString() {
-        // Define a format for the rows: %-16s is a left-aligned 16-character column
         String rowFormat = "%-16s %s%n";
-        double amenities = reservation.getRoom().totalAmenitiesPrice();
+
+        // FIX: Calculate the total of the EXTRA amenities chosen by the user, multiplied by nights
+        double extraAmenitiesTotal = 0;
+        for (Amenity a : reservation.getChosenAmenities()) {
+            extraAmenitiesTotal += (a.getPrice() * numberOfNights);
+        }
+
         double total = calculateTotal();
 
         // Determine status without calling a "process" method (use a getter instead)
@@ -1662,7 +3216,9 @@ public boolean processPayment(double amountPaid){
         sb.append(String.format(rowFormat, "Room:", "#" + reservation.getRoom().getRoomNumber()));
         sb.append(String.format(rowFormat, "Nights:", numberOfNights));
         sb.append(String.format(rowFormat, "Room Rate:", "$" + String.format("%.2f", roomPricePerOneNight)));
-        sb.append(String.format(rowFormat, "Amenities:", "$" + String.format("%.2f", amenities)));
+
+        // FIX: Display the actual extra amenities total here
+        sb.append(String.format(rowFormat, "Extras/Amenities:", "$" + String.format("%.2f", extraAmenitiesTotal)));
 
         sb.append("------------------------------------\n");
         sb.append(String.format(rowFormat, "TOTAL DUE:", "$" + String.format("%.2f", total)));
@@ -1675,7 +3231,6 @@ public boolean processPayment(double amountPaid){
         return sb.toString();
     }
 
-
     public PaymentMethod getPaymentmethod() {
         return paymentmethod;
     }
@@ -1683,16 +3238,11 @@ public boolean processPayment(double amountPaid){
     public void setPaymentmethod(PaymentMethod paymentmethod) {
         this.paymentmethod = paymentmethod;
     }
+
     public Reservation getReservation() {
         return reservation;
     }
 }
-
-
-
-
-
-
 package models;
 
 public enum PaymentMethod {

@@ -34,6 +34,8 @@ public class Main extends Application {
     public static void main(String[] args) throws InvalidDateException, WeakPwordException, InvalidCredentialException {
         // 1. Boot up the database (This MUST be the first line of the whole project)
         HotelDatabase.initialize();
+        network.ChatServer.startServer();
+
         launch(args);
         boolean exitt=false;
         Scanner input = new Scanner(System.in);

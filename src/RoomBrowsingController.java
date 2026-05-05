@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import javafx.concurrent.Task;
+
 
 //Controller for the Room Browsing screen.
 //Allows guests to search/filter available rooms and book them.
@@ -117,56 +119,32 @@ public class RoomBrowsingController implements Initializable, GuestAware {
     //Handles the Search button — filters rooms based on criteria.
     @FXML
     private void handleSearch() {
-        // Validate dates are provided
         LocalDate checkIn = filterCheckIn.getValue();
         LocalDate checkOut = filterCheckOut.getValue();
+        if (checkIn == null || checkOut == null) return;
 
-        if (checkIn == null || checkOut == null) {
-            showAlert(Alert.AlertType.WARNING, "Missing Dates",
-                    "Please select both check-in and check-out dates.");
-            return;
-        }
-        // Parse max price
-        double maxPrice = 0;
-        String priceText = filterMaxPrice.getText().trim();
-        if (!priceText.isEmpty()) {
-            try {
-                maxPrice = Double.parseDouble(priceText);
-                if (maxPrice < 0) {
-                    showAlert(Alert.AlertType.WARNING, "Invalid Price",
-                            "Max price cannot be negative.");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                showAlert(Alert.AlertType.WARNING, "Invalid Price",
-                        "Please enter a valid number for max price.");
-                return;
+        String selectedType = filterRoomType.getValue().equals("All Types") ? null : filterRoomType.getValue();
+        double maxPrice = filterMaxPrice.getText().isEmpty() ? 0 : Double.parseDouble(filterMaxPrice.getText());
+
+        resultCountLabel.setText("Searching available rooms...");
+
+        // Run search on background thread
+        Task<List<Room>> searchTask = new Task<>() {
+            @Override
+            protected List<Room> call() throws Exception {
+                return Guest.searchAvailableRooms(checkIn, checkOut, selectedType, maxPrice);
             }
-        }
-        // Determine room type filter
-        String selectedType = null;
-        String typeStr = filterRoomType.getValue();
-        if (typeStr != null && !typeStr.equals("All Types")) {
-            selectedType = typeStr;
-        }
-        // Search using the Guest model's existing method
-        try {
-            List<Room> results = Guest.searchAvailableRooms(checkIn, checkOut, selectedType, maxPrice);
+        };
 
-            // Update table
-            ObservableList<Room> observableRooms = FXCollections.observableArrayList(results);
-            roomsTable.setItems(observableRooms);
+        searchTask.setOnSucceeded(e -> {
+            List<Room> results = searchTask.getValue();
+            roomsTable.setItems(FXCollections.observableArrayList(results));
+            resultCountLabel.setText(results.size() + " room(s) found");
+        });
 
-            // Update result count
-            if (results.isEmpty()) {
-                resultCountLabel.setText("No rooms found matching your criteria.");
-            } else {
-                resultCountLabel.setText(results.size() + " room(s) found");
-            }
-
-        } catch (InvalidDateException e) {
-            showAlert(Alert.AlertType.ERROR, "Date Error", e.getMessage());
-        }
+        Thread thread = new Thread(searchTask);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     //Clears all filter fields.

@@ -7,7 +7,7 @@
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="GuestDashboardController"
-            prefHeight="650" prefWidth="900"
+            prefHeight="650" prefWidth="1100"
             styleClass="root-pane">
 
     <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
@@ -22,6 +22,7 @@
                         style="-fx-font-size: 12px; -fx-padding: 6 16;"/>
             </HBox>
         </top>
+
         <center>
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
                 <VBox spacing="25" alignment="TOP_CENTER" style="-fx-padding: 30;">
@@ -76,9 +77,21 @@
                             </placeholder>
                         </TableView>
                     </VBox>
-
                 </VBox>
             </ScrollPane>
         </center>
+
+        <!-- LIVE CHAT SIDEBAR -->
+        <right>
+            <VBox spacing="10" prefWidth="280" styleClass="profile-card" style="-fx-padding: 15; -fx-border-width: 0 0 0 1; -fx-border-color: #2c3e50;">
+                <Label text="💬 Live Front Desk Chat" style="-fx-text-fill: #3498db; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <TextArea fx:id="chatTextArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" style="-fx-font-family: 'Segoe UI'; -fx-font-size: 13px; -fx-control-inner-background: #ecf0f1;"/>
+                <HBox spacing="8">
+                    <TextField fx:id="chatInputField" promptText="Type a message..." onAction="#handleSendMessage" HBox.hgrow="ALWAYS" style="-fx-background-radius: 4;"/>
+                    <Button text="Send" onAction="#handleSendMessage" styleClass="btn-primary" style="-fx-padding: 5 12;"/>
+                </HBox>
+            </VBox>
+        </right>
+
     </BorderPane>
 </AnchorPane>

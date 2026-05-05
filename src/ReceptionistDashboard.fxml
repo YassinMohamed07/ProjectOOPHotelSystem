@@ -6,7 +6,7 @@
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="ReceptionistDashboardController"
-            prefHeight="700" prefWidth="950"
+            prefHeight="700" prefWidth="1150"
             styleClass="root-pane">
 
     <BorderPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
@@ -61,7 +61,7 @@
                 <Tab text="  Invoices and Payments  ">
                     <VBox spacing="12" style="-fx-padding: 15;">
                         <Label text="All Invoices" styleClass="section-header"/>
-                        <TableView fx:id="invoicesTable" prefHeight="250">
+                        <TableView fx:id="invoicesTable" prefHeight="250" VBox.vgrow="ALWAYS">
                             <columns>
                                 <TableColumn fx:id="colInvGuest" text="Guest" prefWidth="110"/>
                                 <TableColumn fx:id="colInvRoom" text="Room #" prefWidth="80"/>
@@ -112,5 +112,18 @@
                 </Tab>
             </TabPane>
         </center>
+
+        <!-- LIVE CHAT SIDEBAR -->
+        <right>
+            <VBox spacing="10" prefWidth="300" styleClass="profile-card" style="-fx-padding: 15; -fx-border-width: 0 0 0 1; -fx-border-color: #2c3e50;">
+                <Label text="💬 Guest Support Chat" style="-fx-text-fill: #3498db; -fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <TextArea fx:id="chatTextArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" style="-fx-font-family: 'Segoe UI'; -fx-font-size: 13px; -fx-control-inner-background: #ecf0f1;"/>
+                <HBox spacing="8">
+                    <TextField fx:id="chatInputField" promptText="Type reply..." onAction="#handleSendMessage" HBox.hgrow="ALWAYS" style="-fx-background-radius: 4;"/>
+                    <Button text="Send" onAction="#handleSendMessage" styleClass="btn-primary" style="-fx-padding: 5 12;"/>
+                </HBox>
+            </VBox>
+        </right>
+
     </BorderPane>
 </AnchorPane>

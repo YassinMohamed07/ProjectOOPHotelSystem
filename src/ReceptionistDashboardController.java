@@ -9,6 +9,9 @@ import exceptions.InvalidCredentialException;
 import java.net.URL;
 import java.time.temporal.ChronoUnit;
 import java.util.ResourceBundle;
+import network.ChatClient;
+import javafx.application.Platform;
+
 
 //Controller for the Receptionist (Front Desk) Dashboard.
 //References Receptionist class methods for check-in, check-out,
@@ -49,6 +52,10 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
     @FXML private TableColumn<Room, String> colViewRoomNum;
     @FXML private TableColumn<Room, String> colViewRoomType;
     @FXML private TableColumn<Room, String> colViewRoomPrice;
+    // --- CHAT VARIABLES ---
+    @FXML private TextArea chatTextArea;
+    @FXML private TextField chatInputField;
+    private ChatClient chatClient;
 
     private Receptionist receptionist;
 
@@ -97,6 +104,12 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
         }
         staffInfoLabel.setText("Receptionist: " + staff.getUsername());
         refreshAll();
+
+        // --- START CHAT CLIENT ---
+        chatClient = new ChatClient("localhost", 8080, message -> {
+            Platform.runLater(() -> chatTextArea.appendText(message + "\n"));
+        });
+        chatTextArea.appendText("Connected to Guest Support Chat.\n");
     }
     // Reservation operations (references Receptionist.checkIn, checkOut, updateReservationStatus)
     @FXML
@@ -233,5 +246,18 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
     private void setInvStatus(String msg, boolean error) {
         invStatusLabel.setText(msg);
         invStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    // --- CHAT SEND ACTION ---
+    @FXML
+    private void handleSendMessage() {
+        String text = chatInputField.getText().trim();
+        if (!text.isEmpty() && chatClient != null) {
+            // Format: "Receptionist (Name): Message"
+            String formattedMessage = "Receptionist (" + receptionist.getUsername() + "): " + text;
+            chatClient.sendMessage(formattedMessage);
+
+            chatTextArea.appendText("Me: " + text + "\n");
+            chatInputField.clear();
+        }
     }
 }

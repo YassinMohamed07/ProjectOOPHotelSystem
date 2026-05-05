@@ -12,6 +12,9 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import javafx.concurrent.Task;
+import javafx.application.Platform;
+
 
 //Controller for the Reservation Management screen.
 //Allows guests to view their booking history and cancel reservations.
@@ -55,19 +58,45 @@ public class ReservationController implements Initializable, GuestAware {
     }
     //Refreshes the reservations table with the latest data.
     private void refreshTable() {
-        List<Reservation> reservations = currentGuest.viewReservations();
-        ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
+        statusLabel.setText("Loading reservations in background...");
+        statusLabel.getStyleClass().setAll("label", "info-value-light");
 
-        reservationsTable.setItems(observableReservations);
-        reservationsTable.refresh(); // <--- Add this line
+        // 1. Create a background Task
+        Task<List<Reservation>> loadTask = new Task<>() {
+            @Override
+            protected List<Reservation> call() throws Exception {
+                // Simulate network/database delay (remove this Thread.sleep in production)
+                Thread.sleep(800);
+                return currentGuest.viewReservations();
+            }
+        };
 
-        if (reservations.isEmpty()) {
-            statusLabel.setText("You have no reservations.");
+        // 2. What happens when the thread succeeds
+        loadTask.setOnSucceeded(e -> {
+            List<Reservation> reservations = loadTask.getValue();
+            ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
+            reservationsTable.setItems(observableReservations);
+            reservationsTable.refresh();
+
+            if (reservations.isEmpty()) {
+                statusLabel.setText("You have no reservations.");
+                statusLabel.getStyleClass().setAll("label", "status-error");
+            } else {
+                statusLabel.setText(reservations.size() + " reservation(s) found.");
+                statusLabel.getStyleClass().setAll("label", "status-success");
+            }
+        });
+
+        // 3. What happens if the thread fails
+        loadTask.setOnFailed(e -> {
+            statusLabel.setText("Error loading reservations.");
             statusLabel.getStyleClass().setAll("label", "status-error");
-        } else {
-            statusLabel.setText(reservations.size() + " reservation(s) found.");
-            statusLabel.getStyleClass().setAll("label", "status-success");
-        }
+        });
+
+        // 4. Start the thread
+        Thread backgroundThread = new Thread(loadTask);
+        backgroundThread.setDaemon(true); // Ensures thread closes when app closes
+        backgroundThread.start();
     }
     @FXML
     private void handleRefresh() {
