@@ -57,8 +57,10 @@ public class ReservationController implements Initializable, GuestAware {
     private void refreshTable() {
         List<Reservation> reservations = currentGuest.viewReservations();
         ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
-        reservationsTable.setItems(null);
+
         reservationsTable.setItems(observableReservations);
+        reservationsTable.refresh(); // <--- Add this line
+
         if (reservations.isEmpty()) {
             statusLabel.setText("You have no reservations.");
             statusLabel.getStyleClass().setAll("label", "status-error");

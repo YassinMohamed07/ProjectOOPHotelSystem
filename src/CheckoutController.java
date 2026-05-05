@@ -71,7 +71,9 @@ public class CheckoutController implements Initializable, GuestAware {
             }
         }
         ObservableList<Reservation> observableUnpaid = FXCollections.observableArrayList(unpaid);
+
         unpaidTable.setItems(observableUnpaid);
+        unpaidTable.refresh(); // <--- Add this line
 
         if (unpaid.isEmpty()) {
             statusLabel.setText("All reservations are paid. Nothing to checkout.");

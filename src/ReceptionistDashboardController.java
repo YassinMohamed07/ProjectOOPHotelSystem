@@ -203,10 +203,25 @@ public class ReceptionistDashboardController implements Initializable, StaffAwar
 
     // refresh
     private void refreshAll() { refreshReservations(); refreshInvoices(); refreshGuests(); refreshRooms(); }
-    private void refreshReservations() { reservationsTable.setItems(null); reservationsTable.setItems(FXCollections.observableArrayList(HotelDatabase.reservations)); }
-    private void refreshInvoices() { invoicesTable.setItems(null); invoicesTable.setItems(FXCollections.observableArrayList(HotelDatabase.invoices)); }
-    private void refreshGuests() { guestsTable.setItems(null); guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests)); }
-    private void refreshRooms() { allRoomsTable.setItems(null); allRoomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms)); }
+    private void refreshReservations() {
+        reservationsTable.setItems(FXCollections.observableArrayList(HotelDatabase.reservations));
+        reservationsTable.refresh();
+    }
+
+    private void refreshInvoices() {
+        invoicesTable.setItems(FXCollections.observableArrayList(HotelDatabase.invoices));
+        invoicesTable.refresh();
+    }
+
+    private void refreshGuests() {
+        guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests));
+        guestsTable.refresh();
+    }
+
+    private void refreshRooms() {
+        allRoomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms));
+        allRoomsTable.refresh();
+    }
 
     @FXML
     private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }

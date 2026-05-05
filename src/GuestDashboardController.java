@@ -64,8 +64,9 @@ public class GuestDashboardController implements Initializable, GuestAware {
     private void refreshReservationsTable() {
         List<Reservation> reservations = currentGuest.viewReservations();
         ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
-        reservationsTable.setItems(null);
+
         reservationsTable.setItems(observableReservations);
+        reservationsTable.refresh(); // <--- Add this line
     }
 
     //Navigate to Room Browsing screen.
