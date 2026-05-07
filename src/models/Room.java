@@ -83,6 +83,7 @@ public class Room {
                 }}
 
           amenities.add(HotelDatabase.allAmenities.get(i));
+            HotelDatabase.addAmenityToRoom(this, HotelDatabase.allAmenities.get(i));
 System.out.println(HotelDatabase.allAmenities.get(i).getName()+ " is successfuly added to Room "+ this.roomNumber);
                 return;
 

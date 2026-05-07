@@ -50,6 +50,7 @@ public class Receptionist extends Staff {
         // Mark as checked in
         reservation.setCheckedIn(true);
         reservation.setReservationStatus(ReservationStatus.CONFIRMED);
+        HotelDatabase.updateReservation(reservation);
         System.out.println("== CHECK-IN SUCCESSFUL ==");
         System.out.println("Guest: " + reservation.getGuest().getUsername());
         System.out.println("Room: #" + reservation.getRoom().getRoomNumber());
@@ -90,12 +91,13 @@ public class Receptionist extends Staff {
         if (invoice == null) {
             invoice = new Invoice(reservation);
             reservation.setInvoice(invoice);
-            HotelDatabase.invoices.add(invoice);
+            HotelDatabase.addInvoice(invoice);
         }
 
         System.out.println("== CHECK-OUT SUCCESSFUL ==");
         System.out.println("Guest: " + reservation.getGuest().getUsername());
                 System.out.println("Room:  #" + reservation.getRoom().getRoomNumber());
+        HotelDatabase.updateReservation(reservation);
         System.out.println("--Invoice Summary--");
         System.out.println(invoice);
         return invoice;
@@ -124,6 +126,7 @@ public class Receptionist extends Staff {
             }
         }
         reservation.setReservationStatus(newStatus);
+        HotelDatabase.updateReservation(reservation);
         System.out.println("Updated: " + current + " → " + newStatus);
     }
 
@@ -144,8 +147,9 @@ public class Receptionist extends Staff {
                 if (res.getInvoice() == null) {
                     Invoice inv = new Invoice(res);
                     res.setInvoice(inv);
-                    HotelDatabase.invoices.add(inv);
+                    HotelDatabase.addInvoice(inv);
                 }
+                HotelDatabase.updateReservation(res);
                 count++;
             }
         }
@@ -223,11 +227,14 @@ public class Receptionist extends Staff {
             double total = invoice.calculateTotal();
             guest.setBalance(guest.getBalance() - total);
             System.out.println("Guest balance updated. New balance: $" + String.format("%.2f", guest.getBalance()));
+            HotelDatabase.updateGuest(guest);
             // Ensure COMPLETED status after successful payment
             Reservation res = invoice.getReservation();
             if (res != null && res.isCheckedOut() && res.getReservationStatus() != ReservationStatus.COMPLETED) {
                 res.setReservationStatus(ReservationStatus.COMPLETED);
             }
+            HotelDatabase.updateReservation(res);
+            HotelDatabase.updateInvoice(invoice);
         } else {
             System.out.println("Payment failed. Amount $" + String.format("%.2f", amountPaid)
                     + " is insufficient. Total due: $" + String.format("%.2f", invoice.calculateTotal()));

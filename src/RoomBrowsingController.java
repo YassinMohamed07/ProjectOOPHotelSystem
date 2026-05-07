@@ -218,6 +218,9 @@ public class RoomBrowsingController implements Initializable, GuestAware {
             // Refresh the search to remove the now-booked room
             handleSearch();
 
+            HotelDatabase.updateReservation(newRes);
+            HotelDatabase.addInvoice(inv);
+
         } catch (InvalidDateException e) {
             showAlert(Alert.AlertType.ERROR, "Booking Failed", e.getMessage());
         }

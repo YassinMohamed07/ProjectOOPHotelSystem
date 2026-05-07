@@ -1,3 +1,4 @@
+import database.HotelDatabase;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -156,6 +157,9 @@ public class CheckoutController implements Initializable, GuestAware {
         if (success) {
             // Deduct from guest balance
             currentGuest.setBalance(currentGuest.getBalance() - total);
+            HotelDatabase.updateGuest(currentGuest);
+            HotelDatabase.updateReservation(currentInvoice.getReservation());
+            HotelDatabase.updateInvoice(currentInvoice);
 
             showAlert(Alert.AlertType.INFORMATION, "Payment Successful!",
                     "Payment of $" + String.format("%.2f", total) + " processed successfully!\n\n"

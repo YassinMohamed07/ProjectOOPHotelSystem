@@ -12,9 +12,6 @@ import java.time.LocalDate;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
-//Controller for the Admin Dashboard.
-//Implements room CRUD, amenity CRUD, and view-all operations and Staff registration
-//References Admin class methods for business logic.
 public class AdminDashboardController implements Initializable, StaffAware {
 
     @FXML private Label adminInfoLabel;
@@ -88,12 +85,13 @@ public class AdminDashboardController implements Initializable, StaffAware {
         colStaffRole.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getRole().toString()));
         colStaffHours.setCellValueFactory(d -> new SimpleStringProperty(String.valueOf(d.getValue().getWorkingHours())));
         colStaffDob.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getDateOfBirth().toString()));
-        // Staff registration combo
+
         staffRegRole.getItems().addAll(Role.values());
         roomStatusLabel.setText("");
         amenityStatusLabel.setText("");
         staffRegStatusLabel.setText("");
     }
+
     @Override
     public void setStaff(Staff staff) {
         this.currentStaff = staff;
@@ -101,6 +99,7 @@ public class AdminDashboardController implements Initializable, StaffAware {
         populateCombos();
         refreshAll();
     }
+
     private void populateCombos() {
         roomTypeCombo.getItems().clear();
         for (RoomType rt : HotelDatabase.roomTypes) {
@@ -111,7 +110,8 @@ public class AdminDashboardController implements Initializable, StaffAware {
             roomAmenityCombo.getItems().add(a.getName());
         }
     }
-    // Room Management (references Admin.addRoom, deleteRoom, updateRoom)
+
+    // --- Room Management (SYNCED TO DB) ---
     @FXML
     private void handleAddRoom() {
         String numStr = roomNumField.getText().trim();
@@ -122,17 +122,22 @@ public class AdminDashboardController implements Initializable, StaffAware {
         int roomNum;
         try { roomNum = Integer.parseInt(numStr); }
         catch (NumberFormatException e) { setRoomStatus("Room number must be a number.", true); return; }
+
         for (Room r : HotelDatabase.rooms) {
-            if (r.getRoomNumber() == roomNum) {setRoomStatus("Room #" + roomNum + " already exists!", true); return;
-            }
+            if (r.getRoomNumber() == roomNum) {setRoomStatus("Room #" + roomNum + " already exists!", true); return;}
         }
+
         int idx = roomTypeCombo.getSelectionModel().getSelectedIndex();
         RoomType selectedType = HotelDatabase.roomTypes.get(idx);
         Room newRoom = new Room(roomNum, selectedType);
-        HotelDatabase.rooms.add(newRoom);
+
+        // Save to DB
+        HotelDatabase.addRoom(newRoom);
+
         setRoomStatus("Room #" + roomNum + " added as " + selectedType.getTypeName() + ".", false);
         refreshRooms(); roomNumField.clear();
     }
+
     @FXML
     private void handleUpdateRoomType() {
         Room selected = roomsTable.getSelectionModel().getSelectedItem();
@@ -142,9 +147,14 @@ public class AdminDashboardController implements Initializable, StaffAware {
         int idx = roomTypeCombo.getSelectionModel().getSelectedIndex();
         RoomType newType = HotelDatabase.roomTypes.get(idx);
         selected.setType(newType);
+
+        // Save to DB
+        HotelDatabase.updateRoom(selected);
+
         setRoomStatus("Room #" + selected.getRoomNumber() + " updated to " + newType.getTypeName() + ".", false);
         refreshRooms();
     }
+
     @FXML
     private void handleAddAmenityToRoom() {
         Room selected = roomsTable.getSelectionModel().getSelectedItem();
@@ -152,19 +162,21 @@ public class AdminDashboardController implements Initializable, StaffAware {
         if (roomAmenityCombo.getValue() == null) { setRoomStatus("Select an amenity to add.", true); return; }
 
         String amenityName = roomAmenityCombo.getValue();
-        // Check if already has this amenity
         for (Amenity a : selected.getAmenities()) {
-            if (a.getName().equalsIgnoreCase(amenityName)) {setRoomStatus("Room already has " + amenityName + ".", true); return;
-            }
+            if (a.getName().equalsIgnoreCase(amenityName)) {setRoomStatus("Room already has " + amenityName + ".", true); return;}
         }
+
         for (Amenity a : HotelDatabase.allAmenities) {
             if (a.getName().equalsIgnoreCase(amenityName)) {
                 selected.addAmenity(a);
+                // Save to DB
+                HotelDatabase.addAmenityToRoom(selected, a);
                 setRoomStatus(amenityName + " added to Room #" + selected.getRoomNumber() + ".", false);
                 refreshRooms(); return;
             }
         }
     }
+
     @FXML
     private void handleDeleteRoom() {
         Room selected = roomsTable.getSelectionModel().getSelectedItem();
@@ -172,13 +184,15 @@ public class AdminDashboardController implements Initializable, StaffAware {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete Room #" + selected.getRoomNumber() + "?");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
-                HotelDatabase.rooms.remove(selected);
+                // Delete from DB
+                HotelDatabase.deleteRoom(selected);
                 setRoomStatus("Room #" + selected.getRoomNumber() + " deleted.", false);
                 refreshRooms();
             }
         });
     }
-    // Amenity management (references Admin.addAmenity, updateAmenity, deleteAmenity) ===
+
+    // --- Amenity Management (SYNCED TO DB) ---
     @FXML
     private void handleAddAmenity() {
         String name = amenityNameField.getText().trim();
@@ -192,11 +206,16 @@ public class AdminDashboardController implements Initializable, StaffAware {
         for (Amenity a : HotelDatabase.allAmenities) {
             if (a.getName().equalsIgnoreCase(name)) { setAmenityStatus("Amenity '" + name + "' already exists!", true); return; }
         }
-        HotelDatabase.allAmenities.add(new Amenity(name, price));
+
+        Amenity newAmenity = new Amenity(name, price);
+        // Save to DB
+        HotelDatabase.addAmenity(newAmenity);
+
         setAmenityStatus("Amenity '" + name + "' added ($" + String.format("%.2f", price) + ").", false);
         refreshAmenities(); populateCombos();
         amenityNameField.clear(); amenityPriceField.clear();
     }
+
     @FXML
     private void handleUpdateAmenity() {
         Amenity selected = amenitiesTable.getSelectionModel().getSelectedItem();
@@ -209,9 +228,13 @@ public class AdminDashboardController implements Initializable, StaffAware {
         catch (NumberFormatException e) { setAmenityStatus("Invalid price.", true); return; }
 
         selected.setPrice(newPrice);
+        // Save to DB
+        HotelDatabase.updateAmenity(selected);
+
         setAmenityStatus("'" + selected.getName() + "' price updated to $" + String.format("%.2f", newPrice) + ".", false);
         refreshAmenities(); amenityPriceField.clear();
     }
+
     @FXML
     private void handleDeleteAmenity() {
         Amenity selected = amenitiesTable.getSelectionModel().getSelectedItem();
@@ -220,7 +243,9 @@ public class AdminDashboardController implements Initializable, StaffAware {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete amenity '" + selected.getName() + "'?");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
-                HotelDatabase.allAmenities.remove(selected);
+                // Delete from DB
+                HotelDatabase.deleteAmenity(selected);
+
                 int affected = 0;
                 for (Room r : HotelDatabase.rooms) {
                     if (r.getAmenities().remove(selected)) affected++;
@@ -230,51 +255,8 @@ public class AdminDashboardController implements Initializable, StaffAware {
             }
         });
     }
-    // View all / refresh
-    @FXML
-    private void handleRefreshAll() { refreshAll(); }
-    private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); refreshStaff(); }
-    private void refreshRooms() {
-        roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms));
-        roomsTable.refresh(); // Forces a UI redraw
-    }
 
-    private void refreshAmenities() {
-        amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities));
-        amenitiesTable.refresh();
-    }
-
-    private void refreshGuests() {
-        guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests));
-        guestsTable.refresh();
-    }
-
-    private void refreshRoomTypes() {
-        roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes));
-        roomTypesTable.refresh();
-    }
-
-    private void refreshStaff() {
-        staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff));
-        staffTable.refresh();
-    }
-    @FXML
-    private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
-
-    private void setRoomStatus(String msg, boolean error) {
-        roomStatusLabel.setText(msg);
-        roomStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
-    }
-    private void setAmenityStatus(String msg, boolean error) {
-        amenityStatusLabel.setText(msg);
-        amenityStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
-    }
-    private void setStaffRegStatus(String msg, boolean error) {
-        staffRegStatusLabel.setText(msg);
-        staffRegStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
-    }
-
-    //Handles staff registration — only accessible by authenticated Admin
+    // --- Staff Registration (SYNCED TO DB) ---
     @FXML
     private void handleStaffRegister() {
         String username = staffRegUsername.getText().trim();
@@ -298,22 +280,26 @@ public class AdminDashboardController implements Initializable, StaffAware {
             setStaffRegStatus("Invalid working hours. Enter a number.", true);
             return;
         }
+
         try {
-            // Validate using ValidationUtil (same as Admin.registerStaff)
             ValidationUtil.validateUsername(username);
             ValidationUtil.validateDateOfBirth(dob);
             ValidationUtil.validatePassword(password);
 
             if (role == Role.ADMIN) {
-                HotelDatabase.staff.add(new Admin(username, password, dob, hours));
+                Admin newAdmin = new Admin(username, password, dob, hours);
+                HotelDatabase.addStaff(newAdmin); // SAVE TO DB
             } else {
-                HotelDatabase.staff.add(new Receptionist(username, password, dob, hours));
+                Receptionist newRec = new Receptionist(username, password, dob, hours);
+                HotelDatabase.addStaff(newRec); // SAVE TO DB
             }
+
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Staff Registration Successful");
             alert.setHeaderText(role + ": " + username + " registered!");
             alert.setContentText("The staff member can now login.");
             alert.showAndWait();
+
             setStaffRegStatus("Staff registered successfully!", false);
             staffRegUsername.clear(); staffRegPassword.clear();
             staffRegDob.setValue(null); staffRegRole.setValue(null); staffRegHours.clear();
@@ -322,5 +308,47 @@ public class AdminDashboardController implements Initializable, StaffAware {
         } catch (WeakPwordException | InvalidDateException e) {
             setStaffRegStatus(e.getMessage(), true);
         }
+    }
+
+    // --- View All & Refreshes ---
+    @FXML
+    private void handleRefreshAll() { refreshAll(); }
+    private void refreshAll() { refreshRooms(); refreshAmenities(); refreshGuests(); refreshRoomTypes(); refreshStaff(); }
+
+    private void refreshRooms() {
+        roomsTable.setItems(FXCollections.observableArrayList(HotelDatabase.rooms));
+        roomsTable.refresh();
+    }
+    private void refreshAmenities() {
+        amenitiesTable.setItems(FXCollections.observableArrayList(HotelDatabase.allAmenities));
+        amenitiesTable.refresh();
+    }
+    private void refreshGuests() {
+        guestsTable.setItems(FXCollections.observableArrayList(HotelDatabase.guests));
+        guestsTable.refresh();
+    }
+    private void refreshRoomTypes() {
+        roomTypesTable.setItems(FXCollections.observableArrayList(HotelDatabase.roomTypes));
+        roomTypesTable.refresh();
+    }
+    private void refreshStaff() {
+        staffTable.setItems(FXCollections.observableArrayList(HotelDatabase.staff));
+        staffTable.refresh();
+    }
+
+    @FXML
+    private void handleLogout() { SceneNavigator.navigateTo("LoginRegister.fxml"); }
+
+    private void setRoomStatus(String msg, boolean error) {
+        roomStatusLabel.setText(msg);
+        roomStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setAmenityStatus(String msg, boolean error) {
+        amenityStatusLabel.setText(msg);
+        amenityStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
+    }
+    private void setStaffRegStatus(String msg, boolean error) {
+        staffRegStatusLabel.setText(msg);
+        staffRegStatusLabel.getStyleClass().setAll("label", error ? "status-error" : "status-success");
     }
 }
