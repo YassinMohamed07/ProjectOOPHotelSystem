@@ -11,6 +11,8 @@ A comprehensive, object-oriented desktop application for hotel management, devel
 
 [Architecture & OOP Design](#🏗️-Architecture-&-OOP-Design)
 
+[Class UML & Report](#📄-Class-UML-&-Report)
+
 [Technology Stack](#💻-Technology-Stack)
 
 [Milestones](#🎯-Milestones)
@@ -46,6 +48,12 @@ This project is a fully functional Desktop Hotel Reservation System built entire
 * **Data Integrity**: Strict encapsulation with private fields, validated setters, and custom error handling ensures robust data management.
 * **Data Storage**: Currently utilizes a structured In-Memory Database via static ArrayLists for rapid testing and immediate launch capabilities, with the architecture supporting seamless transition to a real relational database.
 
+## 📄 Class UML & Report
+*The Class UML diagram provides a high-level visual representation of the system’s internal structure. It details the attributes, methods, and relationships between the various objects.*
+![UML Class Diagram](docs/Extracted_pages_from_project.svg)
+### Reports ( for each Milestone ) :-
+* [Download Milestone 1 Report](docs/REPORT_MS2_OOP_Finallll.pdf)
+* [Download Milestone 2 Report](docs/milestone1oop_merged.pdf)
 
 ## 💻 Technology Stack
 * **Language**: Java 
