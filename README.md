@@ -50,7 +50,7 @@ This project is a fully functional Desktop Hotel Reservation System built entire
 
 ## 📄 Class UML & Report
 *The Class UML diagram provides a high-level visual representation of the system’s internal structure. It details the attributes, methods, and relationships between the various objects.*
-![UML Class Diagram](docs/Extracted pages from project.svg)
+![UML Class Diagram](docs/Extracted_pages_from_project.svg)
 ### Reports ( for each Milestone ) :-
 * [Download Milestone 1 Report](docs/REPORT_MS2_OOP_Finallll.pdf)
 * [Download Milestone 2 Report](docs/milestone1oop_merged.pdf)
