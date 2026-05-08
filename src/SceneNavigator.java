@@ -7,32 +7,25 @@ import models.Staff;
 import java.net.URL;
 
 //Utility class for navigating between screens using a shared StackPane root.
-//Controllers that need to receive the logged-in Guest must implement GuestAware.
-//Controllers that need to receive the logged-in Staff must implement StaffAware.
+//Controllers that need to receive the logged-in Guest must implement GuestAware same for Staff
 
 public class SceneNavigator {
 
     private static StackPane rootPane;
-
-    public static void setRootPane(StackPane pane) {
-        rootPane = pane;
-    }
+    public static void setRootPane(StackPane pane) {rootPane = pane;}
 
     //Navigate to a screen without passing data.
     public static void navigateTo(String fxmlFile) {
         loadAndShow(fxmlFile, null, null);
     }
-
     //Navigate to a screen and pass the logged-in Guest to the controller.
     public static void navigateTo(String fxmlFile, Guest guest) {
         loadAndShow(fxmlFile, guest, null);
     }
-
     //Navigate to a screen and pass the logged-in Staff to the controller.
     public static void navigateToStaff(String fxmlFile, Staff staff) {
         loadAndShow(fxmlFile, null, staff);
     }
-
     //Core loading method that handles both Guest and Staff navigation.
     private static void loadAndShow(String fxmlFile, Guest guest, Staff staff) {
         try {
@@ -49,19 +42,13 @@ public class SceneNavigator {
             FXMLLoader loader = new FXMLLoader(fxmlUrl);
             Parent view = loader.load();
             Object controller = loader.getController();
-
-            // Pass Guest if provided
             if (guest != null && controller instanceof GuestAware) {
                 ((GuestAware) controller).setGuest(guest);
             }
-
-            // Pass Staff if provided
             if (staff != null && controller instanceof StaffAware) {
                 ((StaffAware) controller).setStaff(staff);
             }
-
             rootPane.getChildren().setAll(view);
-
         } catch (Exception e) {
             System.err.println("Failed to load FXML: " + fxmlFile);
             e.printStackTrace();

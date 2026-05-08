@@ -3,11 +3,14 @@ import java.io.*;
 import java.net.Socket;
 import java.util.function.Consumer;
 
-public class ChatClient {private Socket socket;
+//Simple TCP chat client that connects to the ChatServer
+//and relays messages via a callback.
+
+public class ChatClient {
+    private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private Consumer<String> onMessageReceived;
-
     public ChatClient(String serverAddress, int port, Consumer<String> onMessageReceived) {
         this.onMessageReceived = onMessageReceived;
         try {
@@ -22,20 +25,13 @@ public class ChatClient {private Socket socket;
                     while ((message = in.readLine()) != null) {
                         onMessageReceived.accept(message);
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {e.printStackTrace();}
             });
             listenerThread.setDaemon(true);
             listenerThread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) {e.printStackTrace();}
     }
-
     public void sendMessage(String message) {
-        if (out != null) {
-            out.println(message);
-        }
+        if (out != null) {out.println(message);}
     }
 }

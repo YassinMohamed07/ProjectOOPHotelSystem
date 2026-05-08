@@ -1,5 +1,4 @@
 package models;
-
 import database.HotelDatabase;
 import exceptions.InvalidCredentialException;
 
@@ -12,7 +11,6 @@ public abstract class Staff {
     protected Role role;
     protected  int workingHours;
 
-
     public Staff(String username, String password, LocalDate dateOfBirth, Role role, int workingHours) {
         this.username = username;
         this.password = password;
@@ -20,7 +18,6 @@ public abstract class Staff {
         this.role = role;
         this.workingHours = workingHours;
     }
-
     public void viewAllGuests() {
         System.out.println("\n--- Hotel Guests ---");
         if (HotelDatabase.guests.isEmpty()) {
@@ -37,8 +34,7 @@ public abstract class Staff {
             System.out.println("No rooms available in the system.");
             return;
         }
-        for (Room r : HotelDatabase.rooms) {
-System.out.println(r);        }
+        for (Room r : HotelDatabase.rooms) {System.out.println(r);}
     }
     public void viewAllReservations() {
         System.out.println("\n--- Current Reservations ---");
@@ -46,7 +42,6 @@ System.out.println(r);        }
             System.out.println("No active reservations in the system.");
             return;
         }
-
         // The loop is perfectly written and ready to go.
         for (Reservation res : HotelDatabase.reservations) {
             // We use a placeholder string to prevent red compile errors until Teammate 4 finishes.
@@ -54,71 +49,42 @@ System.out.println(r);        }
         }
     }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getUsername() {return username;}
+    public void setUsername(String username) {this.username = username;}
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public String getPassword() {return password;}
+    public void setPassword(String password) {this.password = password;}
 
-    public String getPassword() {
-        return password;
-    }
+    public LocalDate getDateOfBirth() {return dateOfBirth;}
+    public void setDateOfBirth(LocalDate dateOfBirth) {this.dateOfBirth = dateOfBirth;}
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public Role getRole() {return role;}
+    public void setRole(Role role) {this.role = role;}
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
+    public int getWorkingHours() {return workingHours;}
+    public void setWorkingHours(int workingHours) {this.workingHours = workingHours;}
 
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public int getWorkingHours() {
-        return workingHours;
-    }
-
-    public void setWorkingHours(int workingHours) {
-        this.workingHours = workingHours;
-    }
-    public static Staff login(String username, String password)
-            throws InvalidCredentialException {
+    public static Staff login(String username, String password) throws InvalidCredentialException {
 
         //Check if database is empty
         if (HotelDatabase.staff == null || HotelDatabase.staff.isEmpty()) {
             throw new InvalidCredentialException("No users in system");
         }
-
         // Search through all guests using linear search
         for (Staff g : HotelDatabase.staff) {
             if (g.getUsername().equals(username)) {
                 if (g.verifyPassword(password)) {
-
                     return g; // Return the found staff object
                 } else {
                     throw new InvalidCredentialException("Wrong password");
                 }
             }
         }
-
         // If loop finishes without finding username
         throw new InvalidCredentialException("User '" + username + "' not found");
     }
     public boolean verifyPassword(String input) {
         return this.password.equals(input);
-
     }
 }
 

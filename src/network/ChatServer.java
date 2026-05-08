@@ -25,7 +25,6 @@ public class ChatServer {
             }
         }).start();
     }
-
     public static void broadcastMessage(String message, ClientHandler sender) {
         for (ClientHandler client : clients) {
             if (client != sender) {
@@ -33,16 +32,13 @@ public class ChatServer {
             }
         }
     }
-
     static class ClientHandler implements Runnable {
         private Socket socket;
         private PrintWriter out;
         private BufferedReader in;
-
         public ClientHandler(Socket socket) {
             this.socket = socket;
         }
-
         @Override
         public void run() {
             try {
@@ -56,10 +52,8 @@ public class ChatServer {
                 clients.remove(this);
             }
         }
-
         public void sendMessage(String message) {
             out.println(message);
         }
     }
-
 }

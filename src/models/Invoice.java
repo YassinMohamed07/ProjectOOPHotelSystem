@@ -1,5 +1,4 @@
 package models;
-
 import database.HotelDatabase;
 import interfaces.Payable;
 import java.time.LocalDate;
@@ -13,81 +12,66 @@ public class Invoice implements Payable {
     private LocalDate checkOutDate;
     private PaymentMethod paymentmethod = PaymentMethod.CASH;
     private final LocalDate transactionDate = LocalDate.now();
-
     private long numberOfNights;
     private double roomPricePerOneNight;
 
     public Invoice(Reservation reservation) {
-        if (reservation == null) {
-            throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");
-        }
-
+        if (reservation == null) {throw new IllegalArgumentException("Cannot create an invoice without a valid reservation.");}
         this.reservation = reservation;
         this.checkInDate = reservation.getCheckInDate();
         this.checkOutDate = reservation.getCheckOutDate();
-
         this.numberOfNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
         this.roomPricePerOneNight = reservation.getRoom().totalRoomPricePerOneNight();
     }
-
     @Override
     public double calculateTotal() {
-        // 1. Base Room Cost (Price per night * nights)
-        // Note: roomPricePerOneNight already includes the room's default amenities
-        double baseRoomTotal = numberOfNights * roomPricePerOneNight;
+        // Base Room Cost
+        // roomPricePerOneNight already includes the room's default amenities
 
-        // 2. Extra Amenities Cost (Price of each extra * nights)
+        double baseRoomTotal = numberOfNights * roomPricePerOneNight;
+        // Extra Amenities Cost
         double extraAmenitiesTotal = 0;
         for (Amenity a : reservation.getChosenAmenities()) {
             extraAmenitiesTotal += (a.getPrice() * numberOfNights);
         }
-
-        // 3. Subtotal before tax
+        //Subtotal before tax
         double subtotal = baseRoomTotal + extraAmenitiesTotal;
 
-        // 4. Final Total with 14% Tax
+        //Total with 14% Tax
         return subtotal * 1.14;
     }
-
     public boolean processPayment(double amountPaid){
-        if(amountPaid >= calculateTotal()){
-            reservation.setPaid(true);
-            reservation.setReservationStatus(ReservationStatus.CONFIRMED);
+        if(amountPaid >= calculateTotal()){reservation.setPaid(true);reservation.setReservationStatus(ReservationStatus.CONFIRMED);
             return true;
         }
-
         reservation.setReservationStatus(ReservationStatus.PENDING);
         return false;
     }
-
     @Override
     public String toString() {
         String rowFormat = "%-16s %s%n";
 
-        // FIX: Calculate the total of the EXTRA amenities chosen by the user, multiplied by nights
+        // Calculate the total of the EXTRA amenities chosen by the user
         double extraAmenitiesTotal = 0;
         for (Amenity a : reservation.getChosenAmenities()) {
             extraAmenitiesTotal += (a.getPrice() * numberOfNights);
         }
-
         double total = calculateTotal();
 
-        // Determine status without calling a "process" method (use a getter instead)
+        // Determine status without calling a process method
         String status = reservation.isPaid() ? "PAID" : "UNPAID";
 
         StringBuilder sb = new StringBuilder();
         sb.append("------------------------------------\n");
         sb.append("          HOTEL INVOICE             \n");
         sb.append("------------------------------------\n");
-
         sb.append(String.format(rowFormat, "Guest:", reservation.getGuest().getUsername()));
         sb.append(String.format(rowFormat, "Room:", "#" + reservation.getRoom().getRoomNumber()));
         sb.append(String.format(rowFormat, "Nights:", numberOfNights));
         sb.append(String.format(rowFormat, "Room Rate:", "$" + String.format("%.2f", roomPricePerOneNight)));
 
-        // FIX: Display the actual extra amenities total here
+        // Display the actual extra amenities total here
         sb.append(String.format(rowFormat, "Extras/Amenities:", "$" + String.format("%.2f", extraAmenitiesTotal)));
-
         sb.append("------------------------------------\n");
         sb.append(String.format(rowFormat, "TOTAL DUE:", "$" + String.format("%.2f", total)));
         sb.append(String.format("%-16s %s%n", "", "(Including taxes)"));
@@ -98,15 +82,12 @@ public class Invoice implements Payable {
 
         return sb.toString();
     }
-
     public PaymentMethod getPaymentmethod() {
         return paymentmethod;
     }
-
     public void setPaymentmethod(PaymentMethod paymentmethod) {
         this.paymentmethod = paymentmethod;
     }
-
     public Reservation getReservation() {
         return reservation;
     }

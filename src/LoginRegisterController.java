@@ -11,14 +11,12 @@ import java.util.ResourceBundle;
 //Handles guest login, staff login, guest registration
 public class LoginRegisterController implements Initializable {
 
-    //Login Tab Fields
     @FXML private TextField loginUsername;
     @FXML private PasswordField loginPassword;
     @FXML private TextField staffUsername;
     @FXML private PasswordField staffPassword;
     @FXML private Label loginStatusLabel;
 
-    //Guest Register Tab Fields
     @FXML private TextField regUsername;
     @FXML private PasswordField regPassword;
     @FXML private DatePicker regDob;
@@ -35,34 +33,31 @@ public class LoginRegisterController implements Initializable {
         loginStatusLabel.setText("");
         registerStatusLabel.setText("");
     }
-    //Handles guest login button click.
+    //Handles guest login button
     @FXML
     private void handleGuestLogin() {
         String username = loginUsername.getText().trim();
         String password = loginPassword.getText();
 
         if (username.isEmpty() || password.isEmpty()) {
-            loginStatusLabel.setText("Please enter both username and password.");
-            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            setLoginError("Please enter both username and password.");
             return;
         }
         try {
             Guest guest = Guest.login(username, password);
             SceneNavigator.navigateTo("GuestDashboard.fxml", guest);
         } catch (InvalidCredentialException e) {
-            loginStatusLabel.setText(e.getMessage());
-            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            setLoginError(e.getMessage());
         }
     }
-    //Handles staff login
+    //Handles staff login button
     @FXML
     private void handleStaffLogin() {
         String username = staffUsername.getText().trim();
         String password = staffPassword.getText();
 
         if (username.isEmpty() || password.isEmpty()) {
-            loginStatusLabel.setText("Please enter both staff username and password.");
-            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            setLoginError("Please enter both staff username and password.");
             return;
         }
         try {
@@ -75,11 +70,10 @@ public class LoginRegisterController implements Initializable {
                 SceneNavigator.navigateToStaff("ReceptionistDashboard.fxml", staffMember);
             }
         } catch (InvalidCredentialException e) {
-            loginStatusLabel.setText(e.getMessage());
-            loginStatusLabel.getStyleClass().setAll("label", "status-error");
+            setLoginError(e.getMessage());
         }
     }
-    //Handles new guest registration.
+    //Handles new guest registration
     @FXML
     private void handleRegister() {
         String username = regUsername.getText().trim();
@@ -91,43 +85,49 @@ public class LoginRegisterController implements Initializable {
         String preferences = regPreferences.getText().trim();
 
         if (username.isEmpty() || password.isEmpty() || dob == null || gender == null
-                || balanceStr.isEmpty() || address.isEmpty()) {
-            registerStatusLabel.setText("Please fill in all required fields.");
-            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+                || balanceStr.isEmpty() || address.isEmpty()) {setRegisterError("Please fill in all required fields.");
             return;
         }
         double balance;
         try {
             balance = Double.parseDouble(balanceStr);
-            if (balance < 0) {
-                registerStatusLabel.setText("Balance cannot be negative.");
-                registerStatusLabel.getStyleClass().setAll("label", "status-error");
+            if (balance < 0) {setRegisterError("Balance cannot be negative.");
                 return;
             }
-        } catch (NumberFormatException e) {
-            registerStatusLabel.setText("Invalid balance amount. Enter a number.");
-            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+        } catch (NumberFormatException e) {setRegisterError("Invalid balance amount. Enter a number.");
             return;
         }
         try {
             Guest newGuest = Guest.register(username, password, dob, gender, balance, address, preferences);
-
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Registration Successful");
             alert.setHeaderText("Welcome, " + newGuest.getUsername() + "!");
             alert.setContentText("Your account has been created. You can now login.");
             alert.showAndWait();
-
             registerStatusLabel.setText("Registration successful! Switch to Login tab.");
             registerStatusLabel.getStyleClass().setAll("label", "status-success");
-
-            regUsername.clear(); regPassword.clear(); regDob.setValue(null);
-            regGender.setValue(null); regBalance.clear(); regAddress.clear(); regPreferences.clear();
+            clearRegistrationForm();
             tabPane.getSelectionModel().select(0);
 
         } catch (WeakPwordException | InvalidDateException e) {
-            registerStatusLabel.setText(e.getMessage());
-            registerStatusLabel.getStyleClass().setAll("label", "status-error");
+            setRegisterError(e.getMessage());
         }
+    }
+    private void setLoginError(String message) {
+        loginStatusLabel.setText(message);
+        loginStatusLabel.getStyleClass().setAll("label", "status-error");
+    }
+    private void setRegisterError(String message) {
+        registerStatusLabel.setText(message);
+        registerStatusLabel.getStyleClass().setAll("label", "status-error");
+    }
+    private void clearRegistrationForm() {
+        regUsername.clear();
+        regPassword.clear();
+        regDob.setValue(null);
+        regGender.setValue(null);
+        regBalance.clear();
+        regAddress.clear();
+        regPreferences.clear();
     }
 }

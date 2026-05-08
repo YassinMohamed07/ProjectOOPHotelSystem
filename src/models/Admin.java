@@ -1,5 +1,4 @@
 package models;
-
 import database.HotelDatabase;
 import exceptions.InvalidCredentialException;
 import exceptions.InvalidDateException;
@@ -18,7 +17,6 @@ public class Admin extends Staff implements Manageable {
         ValidationUtil.validateDateOfBirth(dateOfBirth);
         ValidationUtil.validateUsername(username);
     }
-
     @Override
     public void add() {
         Scanner sc = new Scanner(System.in);
@@ -28,7 +26,6 @@ public class Admin extends Staff implements Manageable {
         System.out.println("3. New Room type");
         System.out.print("Select an option (1-3): ");
         int choice = sc.nextInt();
-
         switch (choice) {
             case 1: addRoom(); break;
             case 2: addAmenity(); break;
@@ -36,7 +33,6 @@ public class Admin extends Staff implements Manageable {
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }
-
     @Override
     public void update() {
         Scanner sc = new Scanner(System.in);
@@ -46,7 +42,6 @@ public class Admin extends Staff implements Manageable {
         System.out.println("3. Update an Amenity");
         System.out.print("Select an option (1-3): ");
         int choice = sc.nextInt();
-
         switch (choice) {
             case 1: updateRoom(); break;
             case 2: updateRoomType(); break;
@@ -54,7 +49,6 @@ public class Admin extends Staff implements Manageable {
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }
-
     @Override
     public void delete() {
         Scanner sc = new Scanner(System.in);
@@ -64,7 +58,6 @@ public class Admin extends Staff implements Manageable {
         System.out.println("3. Delete an Amenity");
         System.out.print("Select an option (1-3): ");
         int choice = sc.nextInt();
-
         switch (choice) {
             case 1: deleteRoom(); break;
             case 2: deleteRoomType(); break;
@@ -72,7 +65,6 @@ public class Admin extends Staff implements Manageable {
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }
-
     @Override
     public void viewAll() {
         Scanner sc = new Scanner(System.in);
@@ -83,7 +75,6 @@ public class Admin extends Staff implements Manageable {
         System.out.println("4. View All Guests");
         System.out.print("Select an option (1-4): ");
         int choice = sc.nextInt();
-
         switch (choice) {
             case 1: super.viewAllRooms(); break;
             case 2: viewAllRoomTypes(); break;
@@ -92,27 +83,24 @@ public class Admin extends Staff implements Manageable {
             default: System.out.println("Invalid choice. Returning to menu.");
         }
     }
-
     private void addRoom() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Add New Room ---");
         System.out.print("Enter Room Number: ");
         int roomNum = scanner.nextInt();
 
-        // Validation Check: Does this room already exist?
+        // Validation Check if the romm exists
         for (Room r : HotelDatabase.rooms) {
             if (r.getRoomNumber() == roomNum) {
                 System.out.println("Error: Room #" + roomNum + " already exists in the system! Creation failed.");
                 return;
             }
         }
-
         // Prevent adding a room if no Room Types exist
         if (HotelDatabase.roomTypes.isEmpty()) {
             System.out.println("Error: No room types exist. Please create a Room Type first.");
             return;
         }
-
         // Let the Admin choose the Room Type dynamically
         System.out.println("Select a Room Type:");
         for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
@@ -120,8 +108,6 @@ public class Admin extends Staff implements Manageable {
         }
         System.out.print("Choice: ");
         int typeChoice = scanner.nextInt();
-
-        // Safe array access
         if (typeChoice > 0 && typeChoice <= HotelDatabase.roomTypes.size()) {
             RoomType selectedType = HotelDatabase.roomTypes.get(typeChoice - 1);
             Room newRoom = new Room(roomNum, selectedType);
@@ -132,8 +118,6 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Error: Invalid room type selection. Room creation failed.");
         }
     }
-
-    // ADD ROOM TYPE
     private void addRoomType() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Add New Room Type ---");
@@ -147,20 +131,16 @@ public class Admin extends Staff implements Manageable {
                 return; // Early exit
             }
         }
-
         System.out.print("Enter Base Price per Night: $");
         double price = scanner.nextDouble();
-
         if (price < 0) {
             System.out.println("Error: Price cannot be negative. Creation failed.");
             return;
         }
-
         RoomType newType = new RoomType(name, price);
         HotelDatabase.addRoomType(newType); // SYNCED WITH DB
         System.out.println("Success: Room Type '" + name + "' created successfully!");
     }
-
     private void addAmenityToAROOM(int number){
         Room selectedroom;
         for(int i=0;i<HotelDatabase.rooms.size();i++){
@@ -171,8 +151,6 @@ public class Admin extends Staff implements Manageable {
             }
         }
     }
-
-    // ADD AMENITY
     private void addAmenity() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Add New Amenity ---");
@@ -185,7 +163,6 @@ public class Admin extends Staff implements Manageable {
                 return;
             }
         }
-
         System.out.print("Enter Amenity Price: $");
         double price = scanner.nextDouble();
         scanner.nextLine();
@@ -194,13 +171,10 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Error: Price cannot be negative. Creation failed.");
             return;
         }
-
         Amenity newAmenity = new Amenity(name, price);
         HotelDatabase.addAmenity(newAmenity); // SYNCED WITH DB
         System.out.println("Success: Amenity '" + name + "' added to the system!");
     }
-
-    // UPDATE ROOM
     private void updateRoom() {
         Scanner sc = new Scanner(System.in);
         System.out.println("\n--- Update Room  ---");
@@ -209,22 +183,18 @@ public class Admin extends Staff implements Manageable {
         System.out.println("1. Update Room type");
         System.out.println("2. Add an amenity");
         System.out.println("Select an option (1-2): ");
-
         switch(sc.nextInt()) {
             case 1: {
                 Room roomToUpdate = null;
                 for (Room r : HotelDatabase.rooms) {
-                    if (r.getRoomNumber() == num) {
-                        roomToUpdate = r;
+                    if (r.getRoomNumber() == num) {roomToUpdate = r;
                         break;
                     }
                 }
-
                 if (roomToUpdate == null) {
                     System.out.println("Error: Room #" + num + " not found in the system.");
                     return;
                 }
-
                 System.out.println("Room found! Current Type: " + roomToUpdate.getType().getTypeName());
                 System.out.println("Select a new Room Type:");
                 for (int i = 0; i < HotelDatabase.roomTypes.size(); i++) {
@@ -232,10 +202,8 @@ public class Admin extends Staff implements Manageable {
                 }
                 System.out.print("Choice: ");
                 int choice = sc.nextInt();
-
                 if (choice > 0 && choice <= HotelDatabase.roomTypes.size()) {
                     RoomType newType = HotelDatabase.roomTypes.get(choice - 1);
-
                     if (roomToUpdate.getType() == newType) {
                         System.out.println("Notice: Room #" + num + " is already a " + newType.getTypeName() + ". No changes made.");
                     } else {
@@ -258,8 +226,6 @@ public class Admin extends Staff implements Manageable {
             }
         }
     }
-
-    // UPDATE ROOM TYPE
     private void updateRoomType() {
         Scanner sc = new Scanner(System.in);
         System.out.println("\n--- Update Room Type Price ---");
@@ -273,16 +239,13 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (typeToUpdate == null) {
             System.out.println("Error: Room Type '" + name + "' not found.");
             return;
         }
-
         System.out.println("Found '" + typeToUpdate.getTypeName() + "'. Current Price: $" + typeToUpdate.getBasePrice());
         System.out.print("Enter NEW Base Price: $");
         double newPrice = sc.nextDouble();
-
         if (newPrice < 0) {
             System.out.println("Error: Price cannot be negative. Update cancelled.");
         } else if (newPrice == typeToUpdate.getBasePrice()) {
@@ -293,14 +256,11 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Success: '" + typeToUpdate.getTypeName() + "' price updated to $" + newPrice);
         }
     }
-
-    // UPDATE AMENITY
     private void updateAmenity() {
         Scanner sc = new Scanner(System.in);
         System.out.println("\n--- Update Amenity Price ---");
         System.out.print("Enter the Name of the Amenity to update: ");
         String name = sc.next();
-
         Amenity amenityToUpdate = null;
         for (Amenity a : HotelDatabase.allAmenities) {
             if (a.getName().equalsIgnoreCase(name)) {
@@ -308,12 +268,10 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (amenityToUpdate == null) {
             System.out.println("Error: Amenity '" + name + "' not found.");
             return;
         }
-
         System.out.println("Found '" + amenityToUpdate.getName() + "'. Current Price: $" + amenityToUpdate.getPrice());
         System.out.print("Enter NEW Price: $");
         double newPrice = sc.nextDouble();
@@ -326,14 +284,11 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Success: '" + amenityToUpdate.getName() + "' price updated to $" + newPrice);
         }
     }
-
-    // DELETE ROOM
     private void deleteRoom() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Delete Room ---");
         System.out.print("Enter Room Number to remove: ");
         int roomNum = scanner.nextInt();
-
         Room roomToRemove = null;
         for (Room r : HotelDatabase.rooms) {
             if (r.getRoomNumber() == roomNum) {
@@ -341,7 +296,6 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (roomToRemove != null) {
             HotelDatabase.deleteRoom(roomToRemove); // SYNCED WITH DB
             System.out.println("Success: Room #" + roomNum + " has been permanently deleted.");
@@ -349,14 +303,11 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Error: Room #" + roomNum + " not found.");
         }
     }
-
-    // DELETE ROOM TYPE
     private void deleteRoomType() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Delete Room Type ---");
         System.out.print("Enter the Name of the Room Type to delete (e.g., Suite): ");
         String name = scanner.next();
-
         RoomType typeToRemove = null;
         for (RoomType rt : HotelDatabase.roomTypes) {
             if (rt.getTypeName().equalsIgnoreCase(name)) {
@@ -364,12 +315,10 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (typeToRemove == null) {
             System.out.println("Error: Room Type '" + name + "' not found.");
             return;
         }
-
         boolean isUsed = false;
         for (Room r : HotelDatabase.rooms) {
             if (r.getType() == typeToRemove) {
@@ -377,7 +326,6 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (isUsed) {
             System.out.println("CRITICAL ERROR: Cannot delete '" + typeToRemove.getTypeName() + "'.");
             System.out.println("There are currently rooms using this type. You must update those rooms to a different type first!");
@@ -386,8 +334,6 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Success: Room Type '" + typeToRemove.getTypeName() + "' has been deleted.");
         }
     }
-
-    // DELETE AMENITY
     private void deleteAmenity() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("\n--- Delete Amenity ---");
@@ -401,10 +347,8 @@ public class Admin extends Staff implements Manageable {
                 break;
             }
         }
-
         if (amenityToRemove != null) {
             HotelDatabase.deleteAmenity(amenityToRemove); // SYNCED WITH DB
-
             int affectedRooms = 0;
             // Also remove from local Java lists so it updates instantly without restarting app
             for (Room r : HotelDatabase.rooms) {
@@ -413,7 +357,6 @@ public class Admin extends Staff implements Manageable {
                     affectedRooms++;
                 }
             }
-
             System.out.println("Success: Amenity '" + amenityToRemove.getName() + "' has been permanently deleted.");
             if (affectedRooms > 0) {
                 System.out.println("Notice: This amenity was automatically removed from " + affectedRooms + " room(s) to prevent ghost billing.");
@@ -423,8 +366,6 @@ public class Admin extends Staff implements Manageable {
             System.out.println("Error: Amenity '" + name + "' not found.");
         }
     }
-
-    // VIEW METHODS
     private void viewAllRoomTypes() {
         System.out.println("\n--- All Room Types ---");
         if (HotelDatabase.roomTypes.isEmpty()) {
@@ -435,7 +376,6 @@ public class Admin extends Staff implements Manageable {
             System.out.println("- " + rt.getTypeName() + " (Base Price: $" + rt.getBasePrice() + ")");
         }
     }
-
     private void viewAllAmenities() {
         System.out.println("\n--- All System Amenities ---");
         if (HotelDatabase.allAmenities.isEmpty()) {
@@ -446,7 +386,6 @@ public class Admin extends Staff implements Manageable {
             System.out.println("- " + HotelDatabase.allAmenities.get(i).getName() + " ($" + HotelDatabase.allAmenities.get(i).getPrice() + ")");
         }
     }
-
     public void resgisterStaff() throws InvalidDateException ,WeakPwordException {
         Scanner input = new Scanner(System.in);
         System.out.println("Enter username (must be at least 3 characters): ");
@@ -464,7 +403,6 @@ public class Admin extends Staff implements Manageable {
         Role role = Role.valueOf(r);
         System.out.println("Enter number of working hours: ");
         int hours = input.nextInt();
-
         if(role.equals(Role.ADMIN)){
             Admin newAdmin = new Admin(username,pass,dateofBirth,hours);
             HotelDatabase.addStaff(newAdmin); // SYNCED WITH DB

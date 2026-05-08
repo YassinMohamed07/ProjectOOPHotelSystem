@@ -1,4 +1,3 @@
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -6,12 +5,12 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import models.Guest;
 import models.Reservation;
+import utils.TableColumnHelper;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 import network.ChatClient;
 import javafx.application.Platform;
-
 
 public class GuestDashboardController implements Initializable, GuestAware {
 
@@ -33,32 +32,22 @@ public class GuestDashboardController implements Initializable, GuestAware {
     @FXML private TextField chatInputField;
     private ChatClient chatClient;
 
-
     private Guest currentGuest;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        columnRoomNum.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getRoom().getRoomNumber())));
-        columnRoomType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRoom().getType().getTypeName()));
-        columnCheckIn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckInDate().toString()));
-        columnCheckOut.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCheckOutDate().toString()));
-        columnStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReservationStatus().toString()));
-        columnPaid.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isPaid() ? "Yes" : "No"));
+        // Set up common reservation columns
+        TableColumnHelper.setupReservationColumns(columnRoomNum, columnRoomType, columnCheckIn, columnCheckOut, columnStatus, columnPaid);
     }
-
     @Override
     public void setGuest(Guest guest) {
         this.currentGuest = guest;
         populateDashboard();
 
-        // --- START CHAT CLIENT ---
-        chatClient = new ChatClient("localhost", 8080, message -> {
-            // Platform.runLater is required when updating UI from a background thread
-            Platform.runLater(() -> chatTextArea.appendText(message + "\n"));
-        });
+        // Start Chat
+        chatClient = new ChatClient("localhost", 8080, message -> {Platform.runLater(() -> chatTextArea.appendText(message + "\n"));});
         chatTextArea.appendText("Connected to Hotel Chat.\n");
     }
-
     //Populates all dashboard fields with the current guest's data.
     private void populateDashboard() {
         if (currentGuest == null) return;
@@ -70,47 +59,39 @@ public class GuestDashboardController implements Initializable, GuestAware {
         profileAddress.setText(currentGuest.getAddress());
         profilePrefs.setText(currentGuest.getRoomPreferences());
         balanceLabel.setText("$" + String.format("%.2f", currentGuest.getBalance()));
-
         refreshReservationsTable();
     }
-
     //Refreshes the reservations table with latest data.
     private void refreshReservationsTable() {
         List<Reservation> reservations = currentGuest.viewReservations();
         ObservableList<Reservation> observableReservations = FXCollections.observableArrayList(reservations);
-
         reservationsTable.setItems(observableReservations);
-        reservationsTable.refresh(); // <--- Add this line
+        reservationsTable.refresh();
     }
-
-    //Navigate to Room Browsing screen.
     @FXML
     private void handleBrowseRooms() {
         SceneNavigator.navigateTo("RoomBrowsing.fxml", currentGuest);
     }
-    //Navigate to Reservation Management screen.
     @FXML
-    private void handleMyReservations() {SceneNavigator.navigateTo("ReservationManagement.fxml", currentGuest);}
-    //Navigate to Checkout & Payment screen.
+    private void handleMyReservations() {
+        SceneNavigator.navigateTo("ReservationManagement.fxml", currentGuest);
+    }
     @FXML
     private void handleCheckout() {
         SceneNavigator.navigateTo("Checkout.fxml", currentGuest);
     }
-    //Logout and return to Log-in/Register screen.
     @FXML
     private void handleLogout() {
         SceneNavigator.navigateTo("LoginRegister.fxml");
     }
-    // --- CHAT SEND ACTION ---
+
+    // Chat send
     @FXML
     private void handleSendMessage() {
         String text = chatInputField.getText().trim();
         if (!text.isEmpty() && chatClient != null) {
-            // Format: "Username: Message"
             String formattedMessage = currentGuest.getUsername() + ": " + text;
             chatClient.sendMessage(formattedMessage);
-
-            // Show it on our own screen
             chatTextArea.appendText("Me: " + text + "\n");
             chatInputField.clear();
         }
